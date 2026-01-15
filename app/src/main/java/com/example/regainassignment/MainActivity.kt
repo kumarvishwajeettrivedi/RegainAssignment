@@ -12,7 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.regainassignment.service.CoreAccessibilityService
+
 import com.example.regainassignment.ui.AppListScreen
 import com.example.regainassignment.ui.PermissionsScreen
 import com.example.regainassignment.util.PermissionUtils
@@ -41,12 +41,11 @@ fun RegainApp() {
     
     // Initial check
     val hasUsage = PermissionUtils.hasUsageStatsPermission(context)
-    val hasOverlay = PermissionUtils.hasOverlayPermission(context)
-    val hasAccessibility = PermissionUtils.isAccessibilityServiceEnabled(context, CoreAccessibilityService::class.java)
     val hasNotification = PermissionUtils.hasNotificationPermission(context)
+    val hasOverlay = android.provider.Settings.canDrawOverlays(context)
     
     // Check all essential permissions
-    val allGrantedInitial = hasUsage && hasOverlay && hasAccessibility && hasNotification
+    val allGrantedInitial = hasUsage && hasNotification && hasOverlay
     
     val startDest = if (allGrantedInitial) "app_list" else "permissions"
     
@@ -55,11 +54,10 @@ fun RegainApp() {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
                 val usage = PermissionUtils.hasUsageStatsPermission(context)
-                val overlay = PermissionUtils.hasOverlayPermission(context)
-                val accessibility = PermissionUtils.isAccessibilityServiceEnabled(context, CoreAccessibilityService::class.java)
                 val notification = PermissionUtils.hasNotificationPermission(context)
+                val overlay = android.provider.Settings.canDrawOverlays(context)
                 
-                if (!usage || !overlay || !accessibility || !notification) {
+                if (!usage || !notification || !overlay) {
                      // Only navigate if not already there to avoid loops/stutter
                      val currentRoute = navController.currentDestination?.route
                      if (currentRoute != "permissions") {

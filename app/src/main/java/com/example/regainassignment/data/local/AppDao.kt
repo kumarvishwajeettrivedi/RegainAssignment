@@ -25,7 +25,7 @@ interface AppDao {
     @Update
     suspend fun updateApp(app: AppEntity)
 
-    @Query("UPDATE app_usage SET totalUsageToday = 0, sessionExpiryTime = 0")
+    @Query("UPDATE app_usage SET totalUsageToday = 0, sessionExpiryTime = 0, sessionState = 0, isTemporarilyBlocked = 0")
     suspend fun resetDailyUsage()
 
     @Query("UPDATE app_usage SET totalUsageToday = :usage, lastInteractTime = :timestamp WHERE packageName = :packageName")
@@ -40,12 +40,21 @@ interface AppDao {
     @Query("UPDATE app_usage SET isTemporarilyBlocked = :isBlocked WHERE packageName = :packageName")
     suspend fun updateTemporaryBlock(packageName: String, isBlocked: Boolean)
     
-    @Query("UPDATE app_usage SET sessionStartTime = :startTime, selectedSessionDuration = :duration, sessionExpiryTime = :expiryTime WHERE packageName = :packageName")
+    @Query("UPDATE app_usage SET sessionStartTime = :startTime, selectedSessionDuration = :duration, sessionExpiryTime = :expiryTime, remainingSessionTime = :duration WHERE packageName = :packageName")
     suspend fun updateSessionInfo(packageName: String, startTime: Long, duration: Long, expiryTime: Long)
     
     @Query("UPDATE app_usage SET remainingSessionTime = :remainingTime WHERE packageName = :packageName")
     suspend fun updateRemainingTime(packageName: String, remainingTime: Long)
     
-    @Query("UPDATE app_usage SET isTemporarilyBlocked = 0")
+    @Query("UPDATE app_usage SET sessionState = :state WHERE packageName = :packageName")
+    suspend fun updateSessionState(packageName: String, state: Int)
+
+    @Query("UPDATE app_usage SET remainingSessionTime = :remainingTime, sessionState = :state, lastPausedTime = :pausedTime WHERE packageName = :packageName")
+    suspend fun updateSessionState(packageName: String, remainingTime: Long, state: Int, pausedTime: Long)
+
+    @Query("UPDATE app_usage SET isTemporarilyBlocked = 0, sessionState = 0")
     suspend fun clearAllTemporaryBlocks()
+
+    @Query("UPDATE app_usage SET totalUsageToday = :totalUsage, remainingSessionTime = :remainingTime, lastInteractTime = :lastUpdated WHERE packageName = :packageName")
+    suspend fun updateSessionProgress(packageName: String, totalUsage: Long, remainingTime: Long, lastUpdated: Long)
 }

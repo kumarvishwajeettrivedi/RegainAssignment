@@ -17,6 +17,9 @@ class RegainApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+    
+    @Inject
+    lateinit var repository: com.example.regainassignment.data.repository.UsageRepository
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -26,6 +29,16 @@ class RegainApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         scheduleMidnightReset()
+        startMonitoringService()
+    }
+    
+    private fun startMonitoringService() {
+        val serviceIntent = android.content.Intent(this, com.example.regainassignment.service.UsageMonitorService::class.java)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
     }
 
     private fun scheduleMidnightReset() {

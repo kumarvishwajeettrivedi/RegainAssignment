@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.example.regainassignment.service.CoreAccessibilityService
 import com.example.regainassignment.util.PermissionUtils
 
 @Composable
@@ -23,8 +22,6 @@ fun PermissionsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var hasUsageStats by remember { mutableStateOf(false) }
-    var hasOverlay by remember { mutableStateOf(false) }
-    var hasAccessibility by remember { mutableStateOf(false) }
     var hasNotification by remember { mutableStateOf(false) }
 
     val notificationPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -32,7 +29,7 @@ fun PermissionsScreen(
         onResult = { isGranted ->
             hasNotification = isGranted
             // Check all again
-            if (hasUsageStats && hasOverlay && hasAccessibility && hasNotification) {
+            if (hasUsageStats && hasNotification) {
                 onAllPermissionsGranted()
             }
         }
@@ -40,11 +37,10 @@ fun PermissionsScreen(
 
     fun checkPermissions() {
         hasUsageStats = PermissionUtils.hasUsageStatsPermission(context)
-        hasOverlay = PermissionUtils.hasOverlayPermission(context)
-        hasAccessibility = PermissionUtils.isAccessibilityServiceEnabled(context, CoreAccessibilityService::class.java)
         hasNotification = PermissionUtils.hasNotificationPermission(context)
+        val hasOverlay = Settings.canDrawOverlays(context)
 
-        if (hasUsageStats && hasOverlay && hasAccessibility && hasNotification) {
+        if (hasUsageStats && hasNotification && hasOverlay) {
             onAllPermissionsGranted()
         }
     }
@@ -94,30 +90,6 @@ fun PermissionsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
 
-            PermissionItem(
-                title = "Display Over Other Apps",
-                description = "To show the block screen over apps.",
-                isGranted = hasOverlay,
-                onClick = {
-                    context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    })
-                }
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PermissionItem(
-                title = "Accessibility Service",
-                description = "To detect when you open an app instantly.",
-                isGranted = hasAccessibility,
-                onClick = {
-                    context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 PermissionItem(
                     title = "Notifications",
@@ -127,7 +99,20 @@ fun PermissionsScreen(
                         notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                     }
                 )
+                Spacer(modifier = Modifier.height(16.dp))
             }
+            
+            // Overlay Permission (Critical for reliable blocking)
+            val hasOverlay = Settings.canDrawOverlays(context)
+             PermissionItem(
+                title = "Display Over Other Apps",
+                description = "Required to show the timer/blocking screen when you open apps.",
+                isGranted = hasOverlay,
+                onClick = {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+                    context.startActivity(intent)
+                }
+            )
         }
     }
 }

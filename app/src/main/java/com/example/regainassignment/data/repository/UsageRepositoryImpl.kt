@@ -64,19 +64,44 @@ class UsageRepositoryImpl @Inject constructor(
         // queries all activities that are launchers
         val activities = pm.queryIntentActivities(intent, 0)
         
+        // Sync system usage stats
+        val usageStatsManager = context.getSystemService(android.content.Context.USAGE_STATS_SERVICE) as? android.app.usage.UsageStatsManager
+        val calendar = java.util.Calendar.getInstance()
+        val endTime = calendar.timeInMillis
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        val startTime = calendar.timeInMillis
+        
+        val systemUsageMap = usageStatsManager?.queryAndAggregateUsageStats(startTime, endTime) ?: emptyMap()
+        
         activities.forEach { resolveInfo ->
             val packageName = resolveInfo.activityInfo.packageName
+            val label = resolveInfo.loadLabel(pm).toString()
+            
             // Skip own app
             if (packageName == context.packageName) return@forEach
             
-            if (appDao.getApp(packageName) == null) {
-                val label = resolveInfo.loadLabel(pm).toString()
+            val systemUsage = systemUsageMap[packageName]?.totalTimeInForeground ?: 0L
+            val existingApp = appDao.getApp(packageName)
+            
+            if (existingApp == null) {
                 appDao.insertApp(
                     AppEntity(
                         packageName = packageName,
-                        appName = label
+                        appName = label,
+                        totalUsageToday = systemUsage // Initialize with actual system usage
                     )
                 )
+            } else {
+                // optional: update existing app usage if system reports more?
+                // For now, let's trust the system usage if it's significantly higher or just ensure synchronization
+                // But we mainly need this for initialization.
+                // Actually, let's sync strictly if usage tracking needs to be accurate "like regain app"
+                if (systemUsage > existingApp.totalUsageToday) {
+                     appDao.updateUsage(packageName, systemUsage, System.currentTimeMillis())
+                }
             }
         }
     }
@@ -87,7 +112,22 @@ class UsageRepositoryImpl @Inject constructor(
     }
     
     override suspend fun setSessionInfo(packageName: String, startTime: Long, duration: Long, expiryTime: Long) {
+        // Atomic session start: Set all fields including remaining time
         appDao.updateSessionInfo(packageName, startTime, duration, expiryTime)
+        appDao.updateRemainingTime(packageName, duration) // Explicit initialization
+        appDao.updateSessionState(packageName, AppEntity.STATE_ACTIVE)
+        
+        // Initialize in-memory session with 0 usage
+        val newSession = SessionState(
+            packageName = packageName,
+            sessionStart = startTime,
+            totalSessionTime = 0L,
+            extensionsGranted = 0L,
+            lastChecked = System.currentTimeMillis()
+        )
+        activeSessions[packageName] = newSession
+        
+        android.util.Log.d("Regain", "Started session for $packageName: duration=${duration}ms, remaining=${duration}ms, state=ACTIVE")
     }
     
     override suspend fun updateRemainingTime(packageName: String, remainingTime: Long) {
@@ -118,5 +158,230 @@ class UsageRepositoryImpl @Inject constructor(
         
         // Return system usage if available, otherwise 0
         return appUsage?.totalTimeInForeground ?: 0L
+    }
+
+    // ==========================================
+    // Session Tracking Implementation (Polling)
+    // ==========================================
+
+    // In-memory cache for polling efficiency (accessed every 15s)
+    private val activeSessions = java.util.concurrent.ConcurrentHashMap<String, SessionState>()
+
+    override suspend fun getCurrentSessionState(packageName: String): SessionState {
+        // Return cached state if available
+        activeSessions[packageName]?.let { session ->
+            if (System.currentTimeMillis() - session.lastChecked < 15 * 60 * 1000) {
+                return session
+            } else {
+                activeSessions.remove(packageName)
+            }
+        }
+        
+        val app = appDao.getApp(packageName)
+        
+        if (app != null) {
+            // BLOCKED or expired session
+            if (app.sessionState == AppEntity.STATE_BLOCKED) {
+                val finishedSession = SessionState(
+                    packageName = packageName,
+                    sessionStart = app.sessionStartTime,
+                    totalSessionTime = app.selectedSessionDuration, // Show full duration used
+                    extensionsGranted = 0L,
+                    lastChecked = System.currentTimeMillis()
+                )
+                activeSessions[packageName] = finishedSession
+                return finishedSession
+            }
+            
+            // Active/Paused session with valid remaining time
+            if ((app.sessionState == AppEntity.STATE_ACTIVE || app.sessionState == AppEntity.STATE_PAUSED) &&
+                app.remainingSessionTime > 0 && app.selectedSessionDuration > 0) {
+                
+                val totalUsed = (app.selectedSessionDuration - app.remainingSessionTime).coerceAtLeast(0L)
+                
+                val restoredSession = SessionState(
+                    packageName = packageName,
+                    sessionStart = app.sessionStartTime,
+                    totalSessionTime = totalUsed,
+                    extensionsGranted = 0L,
+                    lastChecked = System.currentTimeMillis()
+                )
+                activeSessions[packageName] = restoredSession
+                return restoredSession
+            }
+        }
+        
+        // New session - default state
+        val defaultState = SessionState(
+            packageName = packageName,
+            sessionStart = System.currentTimeMillis(),
+            totalSessionTime = 0L,
+            extensionsGranted = 0L,
+            lastChecked = System.currentTimeMillis()
+        )
+        
+        activeSessions[packageName] = defaultState
+        return defaultState
+    }
+
+    override suspend fun updateSessionTime(packageName: String) {
+        val session = activeSessions[packageName] ?: return
+        val app = appDao.getApp(packageName) ?: return
+        
+        // CRITICAL FIX: Do not update time if we are supposed to be PAUSED
+        // This handles race conditions where Receiver calls update but we just paused
+        if (app.sessionState == AppEntity.STATE_PAUSED || app.sessionState == AppEntity.STATE_BLOCKED) {
+             activeSessions.remove(packageName) // Ensure we stop tracking
+             return
+        }
+        
+        val now = System.currentTimeMillis()
+        val delta = (now - session.lastChecked).coerceAtLeast(0L)
+        
+        val newTotalSessionTime = session.totalSessionTime + delta
+        
+        val newState = session.copy(
+            totalSessionTime = newTotalSessionTime,
+            lastChecked = now
+        )
+        
+        activeSessions[packageName] = newState
+        
+        // Calculate remaining time for DB persistence
+        val allowedTime = app.selectedSessionDuration + session.extensionsGranted
+        val remainingTime = (allowedTime - newTotalSessionTime).coerceAtLeast(0L)
+        
+        // Update both total usage and remaining session time continuously
+        val newTotalUsage = app.totalUsageToday + delta
+        
+        appDao.updateSessionProgress(packageName, newTotalUsage, remainingTime, now)
+    }
+
+    override suspend fun grantExtension(packageName: String, minutes: Int) {
+        val session = activeSessions[packageName] ?: getCurrentSessionState(packageName)
+        val extensionMs = minutes * 60 * 1000L
+        
+        val newState = session.copy(
+            extensionsGranted = session.extensionsGranted + extensionMs
+        )
+        
+        activeSessions[packageName] = newState
+        
+        // Ensure app state is ACTIVE after extension
+        appDao.updateSessionState(packageName, AppEntity.STATE_ACTIVE)
+    }
+
+    override suspend fun endSession(packageName: String) {
+        activeSessions.remove(packageName)
+        
+        // Critical: Zero out remaining time to prevent resumeSession from reactivating
+        appDao.updateSessionState(
+            packageName = packageName,
+            remainingTime = 0L,
+            state = AppEntity.STATE_BLOCKED,
+            pausedTime = System.currentTimeMillis()
+        )
+        
+        android.util.Log.d("Regain", "Ended session for $packageName (remainingTime set to 0, state -> BLOCKED)")
+    }
+
+    override suspend fun updateSessionState(packageName: String, state: Int) {
+        appDao.updateSessionState(packageName, state)
+        
+        // Only clear session on explicit BLOCK or expiration
+        if (state == AppEntity.STATE_BLOCKED) {
+            activeSessions.remove(packageName)
+            android.util.Log.d("Regain", "Cleared session cache for $packageName (state -> BLOCKED)")
+        }
+    }
+
+    override suspend fun pauseSession(packageName: String) {
+        val app = appDao.getApp(packageName) ?: return
+        
+        // Only pause if app has an active or paused session
+        if (app.sessionState != AppEntity.STATE_ACTIVE && app.sessionState != AppEntity.STATE_PAUSED) {
+            return
+        }
+        
+        // Get session from cache, or fallback to DB-based calculation
+        val session = activeSessions[packageName]
+        
+        val remainingTime = if (session != null) {
+            // If in memory, use accurate calculation including extensions
+            val existingTotal = session.totalSessionTime
+            val allowedTime = app.selectedSessionDuration + session.extensionsGranted
+            (allowedTime - existingTotal).coerceAtLeast(0L)
+        } else {
+            // Fallback: if not in memory, use DB's current remaining time
+            app.remainingSessionTime.coerceAtLeast(0L)
+        }
+        
+        // Save to database atomically
+        appDao.updateSessionState(
+            packageName = packageName,
+            remainingTime = remainingTime,
+            state = AppEntity.STATE_PAUSED,
+            pausedTime = System.currentTimeMillis()
+        )
+        
+        // CRITICAL FIX: Remove from activeSessions to prevent accidental updates by Receiver race conditions
+        activeSessions.remove(packageName)
+        
+        android.util.Log.d("Regain", "Paused session for $packageName: ${remainingTime}ms remaining. Removed from memory.")
+    }
+
+    override suspend fun resumeSession(packageName: String) {
+        val app = appDao.getApp(packageName) ?: return
+        
+        // BLOCKED means permanently blocked, don't resume
+        if (app.sessionState == AppEntity.STATE_BLOCKED) {
+            android.util.Log.d("Regain", "Resume blocked: $packageName is BLOCKED")
+            return
+        }
+        
+        // IDLE means no session started yet - this is fine, receiver will handle it
+        if (app.sessionState == AppEntity.STATE_IDLE) {
+            android.util.Log.d("Regain", "Resume skipped: $packageName is IDLE (session not started)")
+            return
+        }
+        
+        // For ACTIVE or PAUSED, check if we have time remaining
+        if (app.remainingSessionTime > 0 && app.selectedSessionDuration > 0) {
+            val totalUsed = (app.selectedSessionDuration - app.remainingSessionTime).coerceAtLeast(0L)
+            
+            // Sanity check
+            if (totalUsed > app.selectedSessionDuration) {
+                android.util.Log.e("Regain", "Data corruption: totalUsed ($totalUsed) > duration (${app.selectedSessionDuration})")
+                // Reset to prevent infinite loop
+                appDao.updateSessionState(packageName, AppEntity.STATE_IDLE)
+                return
+            }
+            
+            val session = SessionState(
+                packageName = packageName,
+                sessionStart = app.sessionStartTime,
+                totalSessionTime = totalUsed,
+                extensionsGranted = 0L, // Note: Extensions not fully persisted yet in this simple plan
+                lastChecked = System.currentTimeMillis()
+            )
+            
+            activeSessions[packageName] = session
+            
+            // Update state to ACTIVE
+            appDao.updateSessionState(
+                packageName = packageName,
+                remainingTime = app.remainingSessionTime,
+                state = AppEntity.STATE_ACTIVE,
+                pausedTime = 0L
+            )
+            
+            android.util.Log.d("Regain", "Resumed session for $packageName: used=${totalUsed}ms, remaining=${app.remainingSessionTime}ms")
+        } else {
+            android.util.Log.d("Regain", "Cannot resume $packageName: remainingTime=${app.remainingSessionTime}, duration=${app.selectedSessionDuration}")
+        }
+    }
+    
+    override fun isSessionInMemory(packageName: String): Boolean {
+        return activeSessions.containsKey(packageName)
     }
 }
