@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">RegainAssignment</string>
+    <string name="accessibility_service_description">Regain App Limiter needs accessibility access to detect when you open limited apps and block them appropriately.</string>
+</resources>
