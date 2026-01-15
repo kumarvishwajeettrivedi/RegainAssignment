@@ -148,15 +148,3 @@ app/src/main/java/com/example/regainassignment/
 
 6. **Data Persistence**: Usage data is persisted in Room and synced with system UsageStats
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built as an assignment for Regain
-- Inspired by Digital Wellbeing and screen time management apps
