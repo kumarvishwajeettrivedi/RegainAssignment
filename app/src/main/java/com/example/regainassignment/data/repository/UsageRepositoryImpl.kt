@@ -64,17 +64,55 @@ class UsageRepositoryImpl @Inject constructor(
         // queries all activities that are launchers
         val activities = pm.queryIntentActivities(intent, 0)
         
-        // Sync system usage stats
+        // Sync system usage stats - Use queryEvents for precision matching Digital Wellbeing
         val usageStatsManager = context.getSystemService(android.content.Context.USAGE_STATS_SERVICE) as? android.app.usage.UsageStatsManager
         val calendar = java.util.Calendar.getInstance()
-        val endTime = calendar.timeInMillis
         calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
         calendar.set(java.util.Calendar.MINUTE, 0)
         calendar.set(java.util.Calendar.SECOND, 0)
         calendar.set(java.util.Calendar.MILLISECOND, 0)
         val startTime = calendar.timeInMillis
+        val now = System.currentTimeMillis()
         
-        val systemUsageMap = usageStatsManager?.queryAndAggregateUsageStats(startTime, endTime) ?: emptyMap()
+        // Calculate usage for ALL apps using events
+        val systemUsageMap = mutableMapOf<String, Long>()
+        val lastEventTimeMap = mutableMapOf<String, Long>()
+        val isVisibleMap = mutableMapOf<String, Boolean>()
+        
+        val usageEvents = usageStatsManager?.queryEvents(startTime, now)
+        val event = android.app.usage.UsageEvents.Event()
+        
+        if (usageEvents != null) {
+            while (usageEvents.hasNextEvent()) {
+                usageEvents.getNextEvent(event)
+                val pkg = event.packageName
+                
+                if (event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                    lastEventTimeMap[pkg] = event.timeStamp
+                    isVisibleMap[pkg] = true
+                } else if (event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND) {
+                    val lastTime = lastEventTimeMap[pkg] ?: 0L
+                    val visible = isVisibleMap[pkg] ?: false
+                    
+                    if (visible && lastTime > 0) {
+                        val currentTotal = systemUsageMap[pkg] ?: 0L
+                        systemUsageMap[pkg] = currentTotal + (event.timeStamp - lastTime)
+                    }
+                    isVisibleMap[pkg] = false
+                }
+            }
+            
+            // Handle apps still in foreground
+            isVisibleMap.forEach { (pkg, visible) ->
+                if (visible) {
+                    val lastTime = lastEventTimeMap[pkg] ?: 0L
+                    if (lastTime > 0) {
+                        val currentTotal = systemUsageMap[pkg] ?: 0L
+                        systemUsageMap[pkg] = currentTotal + (now - lastTime)
+                    }
+                }
+            }
+        }
         
         activities.forEach { resolveInfo ->
             val packageName = resolveInfo.activityInfo.packageName
@@ -83,7 +121,7 @@ class UsageRepositoryImpl @Inject constructor(
             // Skip own app
             if (packageName == context.packageName) return@forEach
             
-            val systemUsage = systemUsageMap[packageName]?.totalTimeInForeground ?: 0L
+            val systemUsage = systemUsageMap[packageName] ?: 0L
             val existingApp = appDao.getApp(packageName)
             
             if (existingApp == null) {
@@ -91,17 +129,12 @@ class UsageRepositoryImpl @Inject constructor(
                     AppEntity(
                         packageName = packageName,
                         appName = label,
-                        totalUsageToday = systemUsage // Initialize with actual system usage
+                        totalUsageToday = systemUsage // Initialize with precise system usage
                     )
                 )
             } else {
-                // optional: update existing app usage if system reports more?
-                // For now, let's trust the system usage if it's significantly higher or just ensure synchronization
-                // But we mainly need this for initialization.
-                // Actually, let's sync strictly if usage tracking needs to be accurate "like regain app"
-                if (systemUsage > existingApp.totalUsageToday) {
-                     appDao.updateUsage(packageName, systemUsage, System.currentTimeMillis())
-                }
+                // CRITICAL FIX: Always overwrite with precise system usage
+                appDao.updateUsage(packageName, systemUsage, System.currentTimeMillis())
             }
         }
     }
@@ -139,25 +172,61 @@ class UsageRepositoryImpl @Inject constructor(
     }
     
     override suspend fun getUsageStatsForToday(context: android.content.Context, packageName: String): Long {
+        return calculatePreciseUsage(context, packageName)
+    }
+
+    /**
+     * Calculates precise usage using UsageEvents (Event Stream) instead of buckets.
+     * This ensures exact midnight-to-now calculation matching Digital Wellbeing.
+     */
+    private fun calculatePreciseUsage(context: android.content.Context, packageName: String): Long {
         val usageStatsManager = context.getSystemService(android.content.Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+        
+        // Get exact midnight
         val calendar = java.util.Calendar.getInstance()
-        val endTime = calendar.timeInMillis
         calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
         calendar.set(java.util.Calendar.MINUTE, 0)
         calendar.set(java.util.Calendar.SECOND, 0)
         calendar.set(java.util.Calendar.MILLISECOND, 0)
-        val startTime = calendar.timeInMillis
         
-        // Use queryAndAggregate to automatically merge partial buckets
-        val usageStatsMap = usageStatsManager.queryAndAggregateUsageStats(
-            startTime,
-            endTime
-        )
+        val startOfToday = calendar.timeInMillis
+        val now = System.currentTimeMillis()
         
-        val appUsage = usageStatsMap[packageName]
+        // Log query range
+        // android.util.Log.d("UsageQuery", "Querying events for $packageName from $startOfToday to $now")
         
-        // Return system usage if available, otherwise 0
-        return appUsage?.totalTimeInForeground ?: 0L
+        // Use queryEvents for raw data
+        val usageEvents = usageStatsManager.queryEvents(startOfToday, now)
+        val event = android.app.usage.UsageEvents.Event()
+        
+        var totalInputTime = 0L
+        var lastEventTime = 0L
+        var isVisible = false
+        
+        // Iterate through all events
+        while (usageEvents.hasNextEvent()) {
+            usageEvents.getNextEvent(event)
+            
+            // Filter for our package
+            if (event.packageName == packageName) {
+                if (event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                    lastEventTime = event.timeStamp
+                    isVisible = true
+                } else if (event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND) {
+                    if (isVisible && lastEventTime > 0) {
+                        totalInputTime += (event.timeStamp - lastEventTime)
+                    }
+                    isVisible = false
+                }
+            }
+        }
+        
+        // If app is currently visible, add time since last open until now
+        if (isVisible && lastEventTime > 0) {
+            totalInputTime += (now - lastEventTime)
+        }
+        
+        return totalInputTime
     }
 
     // ==========================================
@@ -224,14 +293,19 @@ class UsageRepositoryImpl @Inject constructor(
         return defaultState
     }
 
+    override suspend fun syncUsageWithSystem(context: android.content.Context, packageName: String) {
+        // Precise sync with system events to update totalUsageToday
+        val systemUsage = calculatePreciseUsage(context, packageName)
+        appDao.updateUsage(packageName, systemUsage, System.currentTimeMillis())
+    }
+
     override suspend fun updateSessionTime(packageName: String) {
         val session = activeSessions[packageName] ?: return
         val app = appDao.getApp(packageName) ?: return
         
         // CRITICAL FIX: Do not update time if we are supposed to be PAUSED
-        // This handles race conditions where Receiver calls update but we just paused
         if (app.sessionState == AppEntity.STATE_PAUSED || app.sessionState == AppEntity.STATE_BLOCKED) {
-             activeSessions.remove(packageName) // Ensure we stop tracking
+             activeSessions.remove(packageName)
              return
         }
         
@@ -248,16 +322,18 @@ class UsageRepositoryImpl @Inject constructor(
         activeSessions[packageName] = newState
         
         // Calculate remaining time for DB persistence
+        // Total Allowed = Original Duration + Extensions
+        // Remaining = Total Allowed - Total Used
         val allowedTime = app.selectedSessionDuration + session.extensionsGranted
         val remainingTime = (allowedTime - newTotalSessionTime).coerceAtLeast(0L)
         
-        // Update both total usage and remaining session time continuously
-        val newTotalUsage = app.totalUsageToday + delta
-        
-        appDao.updateSessionProgress(packageName, newTotalUsage, remainingTime, now)
+        // CRITICAL FIX: Only update remaining session time, NOT daily usage
+        // Daily usage is synced separately from system via syncUsageWithSystem in Receiver
+        appDao.updateRemainingTime(packageName, remainingTime)
     }
 
     override suspend fun grantExtension(packageName: String, minutes: Int) {
+        val app = appDao.getApp(packageName) ?: return
         val session = activeSessions[packageName] ?: getCurrentSessionState(packageName)
         val extensionMs = minutes * 60 * 1000L
         
@@ -267,8 +343,15 @@ class UsageRepositoryImpl @Inject constructor(
         
         activeSessions[packageName] = newState
         
-        // Ensure app state is ACTIVE after extension
+        // IMMEDIATE PERSISTENCE FIX:
+        // Calculate new remaining time immediately so it's saved even if app is killed
+        val allowedTime = app.selectedSessionDuration + newState.extensionsGranted
+        val remainingTime = (allowedTime - newState.totalSessionTime).coerceAtLeast(0L)
+        
+        appDao.updateRemainingTime(packageName, remainingTime)
         appDao.updateSessionState(packageName, AppEntity.STATE_ACTIVE)
+        
+        android.util.Log.d("Regain", "Granted ${minutes}m extension for $packageName. New Remaining: ${remainingTime/1000}s")
     }
 
     override suspend fun endSession(packageName: String) {

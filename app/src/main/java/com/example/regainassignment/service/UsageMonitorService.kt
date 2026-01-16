@@ -41,6 +41,7 @@ class UsageMonitorService : Service() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Main + job)
     private var timerJob: Job? = null
+    private var monitorJob: Job? = null
     
     // Track which package we are currently timing to avoid zombies
     private var currentTimerPackage: String? = null
@@ -67,7 +68,8 @@ class UsageMonitorService : Service() {
             .putBoolean("dialog_showing", false)
             .apply()
         
-        scheduleNextCheck()
+        // scheduleNextCheck() // Removed
+        startMonitoringLoop()
     }
     
     // Updates internal timer job for smooth UI updates
@@ -215,23 +217,31 @@ class UsageMonitorService : Service() {
             .build()
     }
 
-    private fun scheduleNextCheck() {
-        val triggerTime = System.currentTimeMillis() + CHECK_INTERVAL_MS
+    private fun startMonitoringLoop() {
+        // Cancel any existing loop to be safe
+        monitorJob?.cancel()
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExact(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent
-            )
+        monitorJob = scope.launch {
+            android.util.Log.d("Regain", "Starting reliable monitoring loop (Interval: ${CHECK_INTERVAL_MS}ms)")
+            
+            while (isActive) {
+                try {
+                    // Trigger the check immediately
+                    val intent = Intent(this@UsageMonitorService, UsageCheckReceiver::class.java)
+                    sendBroadcast(intent)
+                    
+                    // Wait for the next interval
+                    delay(CHECK_INTERVAL_MS)
+                } catch (e: Exception) {
+                    android.util.Log.e("Regain", "Error in monitoring loop", e)
+                    // Wait a bit before retrying to avoid crash loops
+                    delay(5000)
+                }
+            }
         }
     }
+
+    // Removed scheduleNextCheck as we now use startMonitoringLoop
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY

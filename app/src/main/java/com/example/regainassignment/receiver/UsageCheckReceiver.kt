@@ -49,12 +49,10 @@ class UsageCheckReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 android.util.Log.e("Regain", "Error in UsageCheckReceiver", e)
                 e.printStackTrace()
-            } finally {
-                // Always reschedule next check
-                rescheduleNextCheck(context)
             }
         }
     }
+
 
     /**
      * Main logic: Check current app and handle limits
@@ -113,7 +111,16 @@ class UsageCheckReceiver : BroadcastReceiver() {
             val app = repository.getApp(packageName)
             
             // If app is not found, or limits not enabled -> Cancel timer
-            if (app == null || !app.isLimitEnabled) {
+            if (app == null) {
+                UsageMonitorService.cancelNotificationTimer()
+                return@let
+            }
+            
+            // CRITICAL FIX: Sync usage with system continuously for accuracy
+            // This ensures "Usage Today" always matches Digital Wellbeing
+            repository.syncUsageWithSystem(context, packageName)
+            
+            if (!app.isLimitEnabled) {
                 UsageMonitorService.cancelNotificationTimer()
                 return@let
             }
@@ -269,8 +276,14 @@ class UsageCheckReceiver : BroadcastReceiver() {
             
             // If previous app was BLOCKED, reset to IDLE for next launch
             if (prevAppEntity != null && prevAppEntity.sessionState == AppEntity.STATE_BLOCKED) {
-                repository.updateSessionState(previousApp, AppEntity.STATE_IDLE)
-                android.util.Log.d("Regain", "Reset $previousApp from BLOCKED to IDLE")
+                // EXCEPTION: If we are switching to Regain (e.g. Blocking Overlay), keep it BLOCKED
+                // This allows 'grantExtension' to see the BLOCKED state and calculate time correctly
+                if (currentPkg != context.packageName) {
+                    repository.updateSessionState(previousApp, AppEntity.STATE_IDLE)
+                    android.util.Log.d("Regain", "Reset $previousApp from BLOCKED to IDLE")
+                } else {
+                    android.util.Log.d("Regain", "Kept $previousApp BLOCKED because overlay is active")
+                }
             } else if (prevAppEntity != null) {
                  // Pause session for any other state (ACTIVE, etc)
                  repository.pauseSession(previousApp)
@@ -317,34 +330,5 @@ class UsageCheckReceiver : BroadcastReceiver() {
         context.startActivity(intent)
     }
 
-    /**
-     * Schedule next check in 15 seconds using AlarmManager
-     */
-    private fun rescheduleNextCheck(context: Context) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, UsageCheckReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        
-        val triggerTime = System.currentTimeMillis() + CHECK_INTERVAL_MS
-        
-        // Use setExactAndAllowWhileIdle for Doze mode compatibility
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExact(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent
-            )
-        }
-    }
+    // Removed rescheduleNextCheck as UsageMonitorService now handles the loop
 }

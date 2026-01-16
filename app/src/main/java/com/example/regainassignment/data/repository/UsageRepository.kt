@@ -21,6 +21,9 @@ interface UsageRepository {
     suspend fun toggleLimit(packageName: String, enabled: Boolean)
     suspend fun setSessionExpiry(packageName: String, expiryTime: Long)
     suspend fun resetDailyUsage()
+    
+    suspend fun syncUsageWithSystem(context: android.content.Context, packageName: String)
+    
     suspend fun updateUsage(packageName: String, timeSpent: Long)
     suspend fun setUsage(packageName: String, totalUsage: Long)
     suspend fun insertApp(app: AppEntity)

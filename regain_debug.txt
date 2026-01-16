@@ -1,0 +1,217 @@
+--------- beginning of main
+01-16 16:49:13.341 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:49:13.354 11912 12532 D Regain  : Current Foreground App (before screen check): null
+01-16 16:49:13.357 11912 12532 D Regain  : Current Foreground App (final): null
+01-16 16:49:13.358 11912 12532 D Regain  : Timer cancelled
+01-16 16:49:23.643 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:49:23.649 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:49:23.649 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:49:23.673 11912 12532 D Regain  : Timer cancelled
+01-16 16:49:33.975 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:49:33.989 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:49:33.989 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:49:33.991 11912 12532 D Regain  : Timer cancelled
+01-16 16:49:44.214 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:49:44.226 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:49:44.226 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:49:44.228 11912 12532 D Regain  : Timer cancelled
+01-16 16:49:49.238 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:49:49.249 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:49:49.249 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:49:49.252 11912 12532 D Regain  : Timer cancelled
+01-16 16:49:54.267 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:49:54.280 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:49:54.280 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:49:54.284 11912 12532 D Regain  : Timer cancelled
+01-16 16:49:59.305 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:49:59.341 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:49:59.341 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:49:59.349 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:04.371 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:04.388 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:04.388 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:04.393 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:09.415 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:09.447 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:09.447 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:09.455 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:14.481 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:14.518 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:14.518 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:14.526 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:19.548 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:19.563 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:19.563 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:19.566 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:24.588 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:24.628 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:24.629 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:24.634 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:29.652 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:29.666 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:29.667 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:29.670 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:34.690 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:34.709 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:34.709 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:34.713 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:39.726 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:39.740 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:39.740 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:39.743 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:44.765 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:44.800 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:44.800 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:44.808 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:49.824 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:49.834 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:49.835 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:49.838 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:54.858 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:54.889 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:54.889 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:54.896 11912 12532 D Regain  : Timer cancelled
+01-16 16:50:59.914 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:50:59.927 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:50:59.927 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:50:59.932 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:04.945 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:04.959 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:51:04.959 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:51:04.963 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:09.983 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:10.004 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:51:10.004 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:51:10.011 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:15.028 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:15.041 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:51:15.041 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:51:15.045 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:20.066 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:20.095 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:51:20.096 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:51:20.103 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:25.119 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:25.127 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:51:25.128 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:51:25.130 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:30.143 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:30.147 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.settings
+01-16 16:51:30.147 11912 12532 D Regain  : Current Foreground App (final): com.android.settings
+01-16 16:51:30.153 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:35.165 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:35.168 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:51:35.169 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:51:35.176 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:40.188 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:40.197 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:51:40.197 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:51:40.199 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:45.221 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:45.249 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:51:45.250 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:51:45.256 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:50.278 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:50.291 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:51:50.292 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:51:50.295 11912 12532 D Regain  : Timer cancelled
+01-16 16:51:55.319 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:51:55.346 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:51:55.347 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:51:55.353 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:00.369 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:00.378 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:00.378 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:00.381 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:05.400 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:05.427 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:05.428 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:05.433 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:10.452 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:10.456 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:52:10.456 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:52:10.461 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:15.479 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:15.508 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:15.508 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:15.519 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:20.544 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:20.572 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:20.572 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:20.578 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:25.599 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:25.617 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:25.617 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:25.623 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:30.650 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:30.682 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:30.682 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:30.689 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:35.706 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:35.717 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:35.717 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:35.720 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:40.742 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:40.770 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:40.772 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:40.778 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:45.799 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:45.813 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:45.813 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:45.816 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:50.837 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:50.864 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:50.865 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:50.873 11912 12532 D Regain  : Timer cancelled
+01-16 16:52:55.896 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:52:55.914 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:52:55.914 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:52:55.919 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:00.932 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:00.951 11912 12532 D Regain  : Current Foreground App (before screen check): com.google.android.apps.wellbeing
+01-16 16:53:00.952 11912 12532 D Regain  : Current Foreground App (final): com.google.android.apps.wellbeing
+01-16 16:53:00.958 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:05.981 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:05.990 11912 12532 D Regain  : Current Foreground App (before screen check): com.example.regainassignment
+01-16 16:53:05.990 11912 12532 D Regain  : Current Foreground App (final): com.example.regainassignment
+01-16 16:53:06.001 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:11.019 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:11.047 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:11.047 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:11.059 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:16.085 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:16.113 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:16.114 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:16.121 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:21.137 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:21.150 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:21.151 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:21.155 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:26.174 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:26.195 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:26.195 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:26.200 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:31.217 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:31.232 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:31.232 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:31.236 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:36.257 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:36.286 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:36.286 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:36.293 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:41.311 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:41.324 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:41.324 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:41.327 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:46.356 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:46.379 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:46.379 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:46.385 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:51.400 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:51.410 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:51.410 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:51.413 11912 12532 D Regain  : Timer cancelled
+01-16 16:53:56.422 11912 11912 D Regain  : UsageCheckReceiver: onReceive triggered
+01-16 16:53:56.438 11912 12532 D Regain  : Current Foreground App (before screen check): com.android.launcher3
+01-16 16:53:56.438 11912 12532 D Regain  : Current Foreground App (final): com.android.launcher3
+01-16 16:53:56.443 11912 12532 D Regain  : Timer cancelled

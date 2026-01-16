@@ -80,16 +80,21 @@ class SoftBlockActivity : ComponentActivity() {
                     limitType = limitType,
                     usageTime = usageTime,
                     onCloseApp = {
-                        hasUserInteracted = true
-                        closeApp()
+                        if (!hasUserInteracted) {
+                            hasUserInteracted = true
+                            closeApp()
+                        }
                     },
                     onContinue = { 
-                        hasUserInteracted = true
-                        // logic to handle continue
+                        // UX-only action (switching screens), no repository call yet
+                        // But we can track it if we want to prevent rapid switching
+                         // hasUserInteracted = true // Don't block screen navigation
                     },
                     onStartSession = { minutes ->
-                        hasUserInteracted = true
-                        startSession(minutes)
+                        if (!hasUserInteracted) {
+                            hasUserInteracted = true
+                            startSession(minutes)
+                        }
                     }
                 )
             }
