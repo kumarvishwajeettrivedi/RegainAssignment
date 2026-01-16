@@ -16,6 +16,9 @@ import com.example.regainassignment.data.local.AppEntity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 
+import androidx.compose.material.icons.filled.Settings
+import androidx.navigation.NavController
+
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -24,6 +27,7 @@ import androidx.compose.runtime.getValue
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppListScreen(
+    navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val apps by viewModel.appList.collectAsState()
@@ -42,7 +46,15 @@ fun AppListScreen(
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    ),
+                    actions = {
+                        IconButton(onClick = { navController.navigate("diagnostics") }) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Settings,
+                                contentDescription = "Diagnostics"
+                            )
+                        }
+                    }
                 )
                 // Search Bar
                 OutlinedTextField(

@@ -141,7 +141,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
         } ?: run {
             // No current app (e.g. home screen) -> Cancel timer and reset notification
             UsageMonitorService.cancelNotificationTimer()
-            UsageMonitorService.updateNotification("Regain Active", "Monitoring usage...", 0, 0)
+            UsageMonitorService.updateNotification("", "Regain Active", "Monitoring usage...", 0, 0)
         }
     }
 
@@ -180,6 +180,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
                 android.util.Log.d("Regain", "Notification update: $title | $text")
                 
                 UsageMonitorService.updateNotification(
+                    app.packageName,
                     title, 
                     text,
                     (allowedTime / 1000).toInt(), 

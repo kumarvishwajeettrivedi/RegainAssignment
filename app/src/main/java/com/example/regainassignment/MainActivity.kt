@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 
 import com.example.regainassignment.ui.AppListScreen
 import com.example.regainassignment.ui.PermissionsScreen
+import com.example.regainassignment.ui.DiagnosticScreen
 import com.example.regainassignment.util.PermissionUtils
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -23,7 +24,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Using MaterialTheme directly if custom theme not readily available or to ensure simplicity
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     RegainApp()
@@ -39,53 +39,54 @@ fun RegainApp() {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     
-    // Initial check
+    // Logic to determine start destination
     val hasUsage = PermissionUtils.hasUsageStatsPermission(context)
-    val hasNotification = PermissionUtils.hasNotificationPermission(context)
-    val hasOverlay = android.provider.Settings.canDrawOverlays(context)
+    val hasOverlay = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+        android.provider.Settings.canDrawOverlays(context)
+    } else true
+    val hasAlarm = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+        val am = context.getSystemService(android.app.AlarmManager::class.java)
+        am.canScheduleExactAlarms()
+    } else true
     
-    // Check all essential permissions
-    val allGrantedInitial = hasUsage && hasNotification && hasOverlay
+    val allGranted = hasUsage && hasOverlay && hasAlarm
+    val startDest = if (allGranted) "app_list" else "permissions"
     
-    val startDest = if (allGrantedInitial) "app_list" else "permissions"
-    
-    // Re-check on Resume
+    // Re-check on resume
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                val usage = PermissionUtils.hasUsageStatsPermission(context)
-                val notification = PermissionUtils.hasNotificationPermission(context)
-                val overlay = android.provider.Settings.canDrawOverlays(context)
-                
-                if (!usage || !notification || !overlay) {
-                     // Only navigate if not already there to avoid loops/stutter
-                     val currentRoute = navController.currentDestination?.route
-                     if (currentRoute != "permissions") {
+                 val u = PermissionUtils.hasUsageStatsPermission(context)
+                 val o = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                     android.provider.Settings.canDrawOverlays(context)
+                 } else true
+                 val a = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                     val am = context.getSystemService(android.app.AlarmManager::class.java)
+                     am.canScheduleExactAlarms()
+                 } else true
+                 
+                 if (!u || !o || !a) {
+                     if (navController.currentDestination?.route != "permissions") {
                          navController.navigate("permissions") {
-                             popUpTo(0) { inclusive = true } // Clear back stack
+                             popUpTo(0) { inclusive = true }
                          }
                      }
-                }
+                 }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     NavHost(navController = navController, startDestination = startDest) {
         composable("permissions") {
-            PermissionsScreen(
-                onAllPermissionsGranted = {
-                    navController.navigate("app_list") {
-                        popUpTo("permissions") { inclusive = true }
-                    }
-                }
-            )
+            PermissionsScreen(navController = navController)
         }
         composable("app_list") {
-            AppListScreen()
+            AppListScreen(navController = navController)
+        }
+        composable("diagnostics") {
+            DiagnosticScreen()
         }
     }
 }

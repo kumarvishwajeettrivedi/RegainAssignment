@@ -41,6 +41,9 @@ class UsageMonitorService : Service() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Main + job)
     private var timerJob: Job? = null
+    
+    // Track which package we are currently timing to avoid zombies
+    private var currentTimerPackage: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -68,58 +71,20 @@ class UsageMonitorService : Service() {
     }
     
     // Updates internal timer job for smooth UI updates
-    private fun updateTimer(titleRaw: String, text: String, maxProgress: Int, startProgress: Int) {
+    private fun updateTimer(packageName: String, titleRaw: String, text: String, maxProgress: Int, startProgress: Int) {
         val appName = titleRaw.substringBefore(":")
         
         // Anti-Jumping logic:
-        // If we are already timing THIS app, and the time difference is small, 
-        // DO NOT restart the coroutine. Just let the local timer fly.
-        if (timerJob?.isActive == true) {
-            // We don't have easy access to 'currentSec' from outside the coroutine without a member var.
-            // However, we can check if the params are identical or very close.
-            // Effectively, we just want to avoid the "Stop-Start" glitch.
-            
-            // If the max time is same, and we are running, let's assume we are good unless force updated?
-            // Actually, we can just check if we are already monitoring this app.
-            // But we need to ensure we DO apply the update if the time is way off (drift).
-            
-            // Let's simply NOT cancel if it's the same request.
-            // But 'startProgress' increases every 2s from Receiver.
-            // While our local 'currentSec' increases every 1s.
-            // So they should be roughly equal.
-            
-            // Since we can't read 'currentSec' easily here (it's a local var in the coroutine),
-            // let's just make the coroutine update a shared member variable 'lastKnownProgress'.
-            // OR simpler:
-            // Just don't cancel if title contains same App Name.
-            // The Service timer is the UI source of truth. The Receiver is the Data source.
-            // If we trust the Service to count seconds correctly, we only need to sync if
-            // the Data source says we are WAY off (e.g. > 5s).
-            
-            // For now, to simply fix the JUMP, we will return if the app name is the same.
-            // This relies on the Service's internal timer being accurate enough for 5 minutes.
-            // It practically is.
-            if (text.contains(appName, true) || titleRaw.startsWith(appName)) {
-                 // Check if max progress changed (e.g. extension granted)
-                 // We can't access 'maxSec' from previous closure easily without member var.
-                 // Let's assume standard steady state.
-                 // To be safe: Only skip if "time left" string is consistent?
-                 // No, time left changes.
-                 
-                 // FIX: Just return. The Service counts down. The Receiver updates the DB.
-                 // The Receiver CALLS this method. We just ignore it if running.
-                 // We only restart if 'maxProgress' changes significantly or we pause?
-                 // But we don't have 'maxProgress' history.
-                 
-                 // Radical Fix: UsageCheckReceiver should NOT call this if it just wants to "tick".
-                 // But we can't change Receiver logic easily to know if Service is alive.
-                 
-                 // So: We assume if job is active, we are fine.
-                 return
-            }
+        // If we are already timing THIS app, avoid restarting the coroutine to prevent visual glitches.
+        if (timerJob?.isActive == true && currentTimerPackage == packageName) {
+             // We assume the local timer is accurate enough for short durations.
+             // Only restart if we wanted to enforce a sync? 
+             // For now, steady state behavior is better.
+             return
         }
 
         timerJob?.cancel()
+        currentTimerPackage = packageName
         
         if (maxProgress <= 0) {
             updateNotificationUI(titleRaw, text, 0, 0)
@@ -136,20 +101,30 @@ class UsageMonitorService : Service() {
                 // 1. Strict Screen Lock Check
                 if (!powerManager.isInteractive) {
                     android.util.Log.d("Regain", "Screen locked, pausing visual timer")
-                    // Reset UI to generic message
-                    updateNotificationUI("Regain is active", "Monitoring usage...", 0, 0)
+                    resetToDefaultNotification()
                     break
                 }
             
-                // 2. Strict Foreground Check
+                // 2. Strict Foreground Check & Immediate Switch Detection
                 val currentPkg = getCurrentForegroundPkg()
                 
                 if (currentPkg != null) {
                     // Check for Launcher
                     if (currentPkg.contains("launcher") || currentPkg.contains("nexuslauncher")) {
                          android.util.Log.d("Regain", "User on Home Screen, pausing timer visual")
-                         updateNotificationUI("Regain is active", "Monitoring usage...", 0, 0)
+                         resetToDefaultNotification()
                          break
+                    }
+                    
+                    // Check for App Switch (Zombie Timer Fix + Fast Response)
+                    if (currentPkg != packageName) {
+                        android.util.Log.d("Regain", "App switched from $packageName to $currentPkg. Stopping timer.")
+                        resetToDefaultNotification()
+                        
+                        // KEY FIX: Immediately trigger Receiver to handle the new app!
+                        // This reduces the delay for the bottom sheet/blocking overlay.
+                        sendBroadcast(Intent(this@UsageMonitorService, UsageCheckReceiver::class.java))
+                        break
                     }
                 }
                 
@@ -158,17 +133,15 @@ class UsageMonitorService : Service() {
                 
                 val newTitle = "$appName: $formattedTime left"
                 
-                android.util.Log.d("Regain", "Timer Update: $newTitle")
+                android.util.Log.d("Regain", "Timer Update: $packageName - $formattedTime left")
                 updateNotificationUI(newTitle, text, maxSec, currentSec)
                 
                 delay(1000)
                 currentSec++
             }
             if (currentSec >= maxSec) {
-                // Don't show Time's Up here, let the Receiver handle the blocking.
-                // Just reset notification.
-                android.util.Log.d("Regain", "Timer Finished locally")
-                // updateNotificationUI("$appName: Time's Up!", text, maxSec, maxSec) 
+                android.util.Log.d("Regain", "Timer Finished locally for $packageName")
+                // Let the Receiver handle the actual blocking logic
             }
         }
     }
@@ -189,7 +162,6 @@ class UsageMonitorService : Service() {
         return lastEvent?.packageName
     }
     
-    // Simple helper if not available elsewhere, or rely on util
     private fun formatTime(millis: Long): String {
         val seconds = millis / 1000
         val m = seconds / 60
@@ -212,6 +184,11 @@ class UsageMonitorService : Service() {
         }
         
         notificationManager.notify(NOTIFICATION_ID, builder.build())
+    }
+
+    private fun resetToDefaultNotification() {
+        currentTimerPackage = null
+        updateNotificationUI("Regain is active", "Monitoring usage...", 0, 0)
     }
 
     private fun createNotification(): Notification {
@@ -272,10 +249,9 @@ class UsageMonitorService : Service() {
     private fun cancelTimer() {
         timerJob?.cancel()
         timerJob = null
+        currentTimerPackage = null
         android.util.Log.d("Regain", "Timer cancelled")
-        
-        // Reset notification to default state
-        updateNotificationUI("Regain is active", "Monitoring usage...", 0, 0)
+        resetToDefaultNotification()
     }
 
     companion object {
@@ -286,8 +262,8 @@ class UsageMonitorService : Service() {
         @Volatile
         var instance: UsageMonitorService? = null
 
-        fun updateNotification(title: String, text: String, max: Int, progress: Int) {
-            instance?.updateTimer(title, text, max, progress)
+        fun updateNotification(packageName: String, title: String, text: String, max: Int, progress: Int) {
+            instance?.updateTimer(packageName, title, text, max, progress)
         }
         
         fun cancelNotificationTimer() {
