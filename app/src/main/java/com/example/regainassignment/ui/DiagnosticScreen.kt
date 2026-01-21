@@ -99,11 +99,34 @@ fun DiagnosticScreen() {
             description = "Background service that monitors app usage",
             isOk = serviceRunning
         )
+
+        // Check 5: Battery Optimization (New)
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        val isIgnoringBatteryOptimizations = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            powerManager.isIgnoringBatteryOptimizations(context.packageName)
+        } else {
+            true
+        }
+
+        DiagnosticItem(
+            label = "Battery Restricted",
+            status = if (isIgnoringBatteryOptimizations) "Unrestricted ✓" else "Restricted ⚠️",
+            description = "Disable battery saver for this app to prevent killing",
+            isOk = isIgnoringBatteryOptimizations,
+            action = if (!isIgnoringBatteryOptimizations && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                {
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                    }
+                    context.startActivity(intent)
+                }
+            } else null
+        )
         
         Spacer(modifier = Modifier.height(24.dp))
         
         // Overall Status
-        val allOk = hasOverlayPermission && canScheduleAlarms && hasUsageStats && serviceRunning
+        val allOk = hasOverlayPermission && canScheduleAlarms && hasUsageStats && serviceRunning && isIgnoringBatteryOptimizations
         
         Card(
             modifier = Modifier.fillMaxWidth(),

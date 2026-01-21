@@ -29,6 +29,7 @@ class RegainApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         scheduleMidnightReset()
+        scheduleServiceWatchdog()
         startMonitoringService()
     }
     
@@ -64,6 +65,17 @@ class RegainApplication : Application(), Configuration.Provider {
             "MidnightReset",
             ExistingPeriodicWorkPolicy.UPDATE, // Update ensures we don't accumulate
             dailyWorkRequest
+        )
+    }
+
+    private fun scheduleServiceWatchdog() {
+        val watchdogRequest = PeriodicWorkRequestBuilder<com.example.regainassignment.worker.ServiceCheckWorker>(15, TimeUnit.MINUTES)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "ServiceWatchdog",
+            ExistingPeriodicWorkPolicy.KEEP, // Keep existing if already scheduled
+            watchdogRequest
         )
     }
 }
