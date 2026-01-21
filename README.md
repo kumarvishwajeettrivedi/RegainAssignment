@@ -4,15 +4,13 @@
 
 ## Features
 
-- **Real-Time App Detection** - Instantly detects when any app is opened using AccessibilityService
+- **Real-Time App Detection** - Detects foreground apps using `UsageStatsManager` and a Foreground Service
 - **Session-Based Limits** - Users choose usage duration (5/10/15/20 minutes) before opening restricted apps
-- **Persistent Tracking** - Tracks total daily usage per app using both local database and system UsageStats
+- **Persistent Tracking** - Tracks total daily usage per app using local database
 - **Blocking Overlays** - Full-screen overlays prevent app usage after time expires
 - **Pause on Screen Lock** - Sessions automatically pause when screen is off and resume on unlock
 - **Midnight Reset** - All usage counters reset at midnight via WorkManager
 - **Foreground Notification** - Shows remaining session time in status bar
-
-
 
 ## Architecture
 
@@ -31,10 +29,10 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                       Service Layer                              │
 │  ┌────────────────────────────┐  ┌───────────────────────────┐  │
-│  │ CoreAccessibilityService   │  │ OverlayManager            │  │
-│  │ - Real-time app detection  │  │ - Blocker overlay         │  │
-│  │ - Session tracking         │  │ - Time's up overlay       │  │
-│  │ - Foreground notification  │  │ - Gatekeeper overlay      │  │
+│  │ UsageMonitorService        │  │ UsageCheckReceiver        │  │
+│  │ - Foreground Service Loop  │  │ - Logic Hub               │  │
+│  │ - Status Notification      │  │ - App Detection           │  │
+│  │                            │  │ - Triggers Block Logic    │  │
 │  └────────────────────────────┘  └───────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -62,7 +60,7 @@
 | Dependency Injection | Dagger Hilt |
 | Local Database | Room with KTX extensions |
 | Async Operations | Kotlin Coroutines + Flow |
-| Background Work | WorkManager |
+| Background Work | WorkManager + Foreground Service |
 | Navigation | Hilt Navigation Compose |
 | Data Serialization | Gson |
 | Min SDK | 26 (Android 8.0) |
@@ -85,11 +83,11 @@
 |------------|---------|
 | `PACKAGE_USAGE_STATS` | Query app usage statistics |
 | `SYSTEM_ALERT_WINDOW` | Display overlay on top of apps |
-| `BIND_ACCESSIBILITY_SERVICE` | Detect app launches in real-time |
-| `POST_NOTIFICATIONS` | Show session timer notification |
 | `FOREGROUND_SERVICE` | Keep tracking service alive |
+| `POST_NOTIFICATIONS` | Show session timer notification |
 | `QUERY_ALL_PACKAGES` | List all installed apps |
 | `RECEIVE_BOOT_COMPLETED` | Reinitialize after device restart |
+| `SCHEDULE_EXACT_ALARM` | Precise checks for real-time accuracy |
 
 ## Setup & Installation
 
@@ -99,12 +97,10 @@
 
 3. Run on a physical device (recommended for full functionality)
 
-4. Grant all 3 required permissions when prompted:
+4. Grant all required permissions when prompted:
    - **Usage Access** - Required to track app usage statistics
    - **Display Over Other Apps** - Required to show blocking overlays
    - **Notifications** - Required to show foreground service notifications (Android 13+)
-
-> **Note:** Accessibility Service is configured separately in Settings → Accessibility → Regain
 
 ## Project Structure
 
@@ -127,7 +123,7 @@ app/src/main/java/com/example/regainassignment/
 │   └── UsageMonitorService.kt          # Foreground service with notification timer
 ├── receiver/
 │   ├── BootReceiver.kt                 # Boot completed receiver
-│   └── UsageCheckReceiver.kt           # AlarmManager receiver for app checks
+│   └── UsageCheckReceiver.kt           # BroadcastReceiver for app detection & logic
 ├── ui/
 │   ├── AppListScreen.kt                # Main app list with toggle switches
 │   ├── HomeViewModel.kt                # ViewModel for app list
@@ -147,21 +143,23 @@ app/src/main/java/com/example/regainassignment/
 
 ## How It Works
 
-1. **App Detection**: `UsageCheckReceiver` triggers every ~2 seconds via `AlarmManager` to check the current foreground app using `UsageStatsManager`
+1. **Continuous Monitoring**: `UsageMonitorService` runs as a foreground service, ensuring the app remains active. It triggers `UsageCheckReceiver` every 2 seconds via broadcast.
 
-2. **Session Initialization**: When a limited app is detected without an active session, `SoftBlockActivity` displays a bottom-sheet overlay prompting the user to select usage duration (5/10/15/20 minutes)
+2. **App Detection**: `UsageCheckReceiver` queries `UsageStatsManager` to identify the current foreground app and determine if it has changed.
 
-3. **In-Memory Tracking**: Selected session data is stored in `UsageRepositoryImpl`'s `activeSessions` ConcurrentHashMap for fast access and accurate time calculation
+3. **Session Logic**: 
+   - If a **restricted app** is detected:
+     - **No Active Session**: Launches `SoftBlockActivity` (bottom sheet) to ask the user for a duration.
+     - **Active Session**: Updates the session timer in `AppDatabase` and `UsageRepository`.
+     - **Time Expired**: Launches `SoftBlockActivity` (full screen) to block access.
 
-4. **Foreground Notification**: `UsageMonitorService` runs as a foreground service, displaying a notification with a countdown timer showing remaining session time
+4. **Foreground Notification**: `UsageMonitorService` maintains a notification with a real-time countdown. It handles the visual timer locally for smoothness while synchronizing with the database states.
 
-5. **Periodic Checks**: `UsageCheckReceiver` calculates elapsed time (`currentTime - lastChecked`), updates `totalSessionTime`, and persists to Room database every check
+5. **Pause/Resume**:
+   - **Screen Lock**: The receiver detects non-interactive state and pauses the session.
+   - **App Switch**: Switching to another app automatically pauses the session of the previous app.
 
-6. **Session Pause/Resume**: On screen lock, session state is saved to database and removed from memory. On unlock, it's restored with accurate remaining time
+6. **Daily Reset**: `MidnightResetWorker` (scheduled via WorkManager) resets 'Usage Today' counters at midnight.
 
-7. **Time's Up**: When session expires, `SoftBlockActivity` shows a full-screen blocking overlay with options to close the app or request an extension
-
-8. **Daily Reset**: `MidnightResetWorker` (scheduled via WorkManager) resets all usage counters at midnight
-
-9. **Data Persistence**: All session state, remaining time, and total daily usage are persisted in Room database for recovery after app restarts or device reboots
+7. **Data Persistence**: All session states, limits, and usage logs are stored in Room database to survive app restarts and device reboots.
 
