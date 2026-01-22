@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Foreground service that runs continuously to monitor app usage.
+ * Foreground service 
  */
 @AndroidEntryPoint
 class UsageMonitorService : Service() {
@@ -43,7 +43,6 @@ class UsageMonitorService : Service() {
     private var timerJob: Job? = null
     private var monitorJob: Job? = null
     
-    // Track which package we are currently timing to avoid zombies
     private var currentTimerPackage: String? = null
 
     override fun onCreate() {
@@ -68,7 +67,7 @@ class UsageMonitorService : Service() {
             .putBoolean("dialog_showing", false)
             .apply()
         
-        // scheduleNextCheck() // Removed
+        // scheduleNextCheck() 
         startMonitoringLoop()
     }
     
@@ -76,8 +75,7 @@ class UsageMonitorService : Service() {
     private fun updateTimer(packageName: String, titleRaw: String, text: String, maxProgress: Int, startProgress: Int) {
         val appName = titleRaw.substringBefore(":")
         
-        // Anti-Jumping logic:
-        // If we are already timing THIS app, avoid restarting the coroutine to prevent visual glitches.
+     
         if (timerJob?.isActive == true && currentTimerPackage == packageName) {
              // We assume the local timer is accurate enough for short durations.
              // Only restart if we wanted to enforce a sync? 
@@ -100,31 +98,28 @@ class UsageMonitorService : Service() {
             val powerManager = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
             
             while (isActive && currentSec < maxSec) {
-                // 1. Strict Screen Lock Check
+               
                 if (!powerManager.isInteractive) {
                     android.util.Log.d("Regain", "Screen locked, pausing visual timer")
                     resetToDefaultNotification()
                     break
                 }
             
-                // 2. Strict Foreground Check & Immediate Switch Detection
                 val currentPkg = getCurrentForegroundPkg()
                 
                 if (currentPkg != null) {
-                    // Check for Launcher
                     if (currentPkg.contains("launcher") || currentPkg.contains("nexuslauncher")) {
                          android.util.Log.d("Regain", "User on Home Screen, pausing timer visual")
                          resetToDefaultNotification()
                          break
                     }
                     
-                    // Check for App Switch (Zombie Timer Fix + Fast Response)
+                    // Check for App Switch
                     if (currentPkg != packageName) {
                         android.util.Log.d("Regain", "App switched from $packageName to $currentPkg. Stopping timer.")
                         resetToDefaultNotification()
                         
-                        // KEY FIX: Immediately trigger Receiver to handle the new app!
-                        // This reduces the delay for the bottom sheet/blocking overlay.
+
                         sendBroadcast(Intent(this@UsageMonitorService, UsageCheckReceiver::class.java))
                         break
                     }

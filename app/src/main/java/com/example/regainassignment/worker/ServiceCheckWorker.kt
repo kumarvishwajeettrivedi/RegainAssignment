@@ -8,11 +8,7 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
-/**
- * A "Watchdog" worker that runs periodically (every ~15 mins) to ensure
- * the UsageMonitorService is still running. If the system killed it,
- * this worker will restart it.
- */
+
 @HiltWorker
 class ServiceCheckWorker @AssistedInject constructor(
     @Assisted appContext: Context,
