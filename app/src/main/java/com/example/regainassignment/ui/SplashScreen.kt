@@ -21,6 +21,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 
 @Composable
 fun SplashScreen(
@@ -69,6 +70,7 @@ fun SplashScreen(
                 text = "🦝",
                 fontSize = 80.sp
             )
+
             
             androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
             
