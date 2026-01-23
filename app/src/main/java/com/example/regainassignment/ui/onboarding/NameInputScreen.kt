@@ -74,8 +74,9 @@ fun NameInputScreen(
             
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { if (it.length <= 20) name = it },
                 label = { Text("Your Name", color = Color.White.copy(alpha = 0.7f)) },
+                supportingText = { Text("${name.length}/20", color = Color.White.copy(alpha = 0.6f)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,

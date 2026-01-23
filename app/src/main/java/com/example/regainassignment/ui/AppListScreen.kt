@@ -89,14 +89,7 @@ fun AppListScreen(
         ) {
             // Unproductive Group
             if (distractionApps.isNotEmpty()) {
-                
                 item {
-                    Text(
-                        text = "Unproductive Apps",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
                     UnproductiveGroupCard(
                         apps = distractionApps,
                         onLimitAll = {

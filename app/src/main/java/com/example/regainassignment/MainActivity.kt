@@ -37,7 +37,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    UnScrollApp(onboardingPrefs)
+                    val navToPlanner = intent.getBooleanExtra("NAV_TO_PLANNER", false)
+                    UnScrollApp(onboardingPrefs, navToPlanner)
                 }
             }
         }
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun UnScrollApp(onboardingPrefs: OnboardingPreferences) {
+fun UnScrollApp(onboardingPrefs: OnboardingPreferences, navToPlanner: Boolean = false) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -150,7 +151,8 @@ fun UnScrollApp(onboardingPrefs: OnboardingPreferences) {
         composable("main") {
             MainScreen(
                 diagnosticsNavController = navController,
-                onboardingPrefs = onboardingPrefs
+                onboardingPrefs = onboardingPrefs,
+                startInPlanner = navToPlanner
             )
         }
         

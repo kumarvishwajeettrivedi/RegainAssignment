@@ -7,7 +7,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info // Fallback if RemoveRedEye fails, but RemoveRedEye should exist if Extended.
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List // Use AutoMirrored
+import androidx.compose.material.icons.filled.Info
+// import androidx.compose.material.icons.filled.List // Deprecated
 import androidx.compose.material.icons.filled.Star
 // If RemoveRedEye needs extended, we use Info which is always there, or we try to find the import.
 // RemoveRedEye is in Filled in Core? Check docs or assume Extended.
@@ -32,30 +34,34 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.regainassignment.ui.planning.PlanningScreen
+import com.example.regainassignment.ui.planning.ProgressScreen
 import com.example.regainassignment.util.OnboardingPreferences
 import com.example.regainassignment.ui.theme.DarkTeal
 import com.example.regainassignment.ui.theme.CleanWhite
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val title: String) {
     object FocusMode : BottomNavItem("focus_mode", Icons.Filled.Face, "Focus")
-    object Planning : BottomNavItem("planning", Icons.Filled.List, "Planning")
+    object Planning : BottomNavItem("planning", Icons.AutoMirrored.Filled.List, "Planning")
     object Progress : BottomNavItem("progress", Icons.Filled.Star, "Progress")
 }
 
 @Composable
 fun MainScreen(
     diagnosticsNavController: NavController,
-    onboardingPrefs: OnboardingPreferences
+    onboardingPrefs: OnboardingPreferences,
+    startInPlanner: Boolean = false
 ) {
     val navController = rememberNavController()
     val todoViewModel: TodoViewModel = hiltViewModel()
     val dueTodosCount by todoViewModel.dueTodosCount.collectAsState()
     
+    val startDest = if (startInPlanner) BottomNavItem.Planning.route else BottomNavItem.FocusMode.route
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Main content
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.FocusMode.route,
+            startDestination = startDest,
             modifier = Modifier.fillMaxSize()
         ) {
             composable(BottomNavItem.FocusMode.route) {
@@ -65,16 +71,13 @@ fun MainScreen(
                 )
             }
             composable(BottomNavItem.Planning.route) {
-                PlanningScreen(viewModel = todoViewModel)
+                PlanningScreen(
+                    viewModel = todoViewModel,
+                    onboardingPrefs = onboardingPrefs
+                )
             }
             composable(BottomNavItem.Progress.route) {
-                // Progress screen placeholder
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Progress Screen - Coming Soon")
-                }
+                ProgressScreen(onboardingPrefs = onboardingPrefs)
             }
         }
         

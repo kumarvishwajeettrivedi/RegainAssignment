@@ -84,8 +84,9 @@ fun FocusScreenHeader(
                     Column {
                         Text(
                             text = "Hello, $userName!",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 22.sp
                             ),
                             color = MaterialTheme.colorScheme.onBackground
                         )

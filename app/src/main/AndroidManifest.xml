@@ -72,6 +72,12 @@
             android:enabled="true"
             android:exported="false" />
 
+        <!-- BroadcastReceiver for Todo Alarms -->
+        <receiver
+            android:name=".receiver.TodoAlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
         <!-- Boot receiver to restart service after device reboot -->
         <receiver
             android:name=".receiver.BootReceiver"
