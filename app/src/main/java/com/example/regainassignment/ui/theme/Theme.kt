@@ -12,35 +12,46 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = DarkMintGreen,
+    secondary = SoftGreen,
+    tertiary = MintGreen,
+    background = DeepTeal,
+    surface = DarkTeal,
+    onPrimary = DarkText,
+    onSecondary = CleanWhite,
+    onTertiary = DarkText,
+    onBackground = CleanWhite,
+    onSurface = CleanWhite,
+    primaryContainer = DarkTeal,
+    secondaryContainer = DeepTeal
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = MintGreen,
+    secondary = SoftGreen,
+    tertiary = DarkTeal,
+    background = LightBeige,
+    surface = CleanWhite,
+    onPrimary = DarkText,
+    onSecondary = DarkText,
+    onTertiary = CleanWhite,
+    onBackground = DarkText,
+    onSurface = DarkText,
+    primaryContainer = SoftGreen,
+    secondaryContainer = LightBeige,
+    error = AccentOrange
 )
 
 @Composable
 fun RegainAssignmentTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Disable dynamic color to enforce our focus theme
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
+        // We override dynamic color to false by default, but if passed as true we could use it. 
+        // For this task, we want the specific "Focus" look.
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)

@@ -41,13 +41,13 @@ class UsageCheckReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        android.util.Log.d("Regain", "UsageCheckReceiver: onReceive triggered")
+        android.util.Log.d("UnScroll", "UsageCheckReceiver: onReceive triggered")
         // Use coroutine for async database operations
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 checkAndHandleCurrentApp(context)
             } catch (e: Exception) {
-                android.util.Log.e("Regain", "Error in UsageCheckReceiver", e)
+                android.util.Log.e("UnScroll", "Error in UsageCheckReceiver", e)
                 e.printStackTrace()
             }
         }
@@ -77,7 +77,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
             currentApp = getCurrentForegroundApp(usageStatsManager, startTime, endTime)
         }
         
-        android.util.Log.d("Regain", "Current Foreground App (before screen check): $currentApp")
+        android.util.Log.d("UnScroll", "Current Foreground App (before screen check): $currentApp")
         
         // Get repository from Application class
         val repository = (context.applicationContext as RegainApplication).repository
@@ -85,7 +85,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
         // CRITICAL FIX: If screen is off/locked, pause the current app FIRST before treating as no app
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
         if (powerManager?.isInteractive == false) {
-            android.util.Log.d("Regain", "Screen is OFF/LOCKED. Pausing current app and stopping monitoring.")
+            android.util.Log.d("UnScroll", "Screen is OFF/LOCKED. Pausing current app and stopping monitoring.")
             
             // Pause the current foreground app if any
             currentApp?.let { pkg ->
@@ -93,7 +93,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
                 if (app != null && app.isLimitEnabled && app.sessionState == AppEntity.STATE_ACTIVE) {
                     repository.updateSessionTime(pkg) // Final update
                     repository.pauseSession(pkg)
-                    android.util.Log.d("Regain", "Paused $pkg due to screen lock")
+                    android.util.Log.d("UnScroll", "Paused $pkg due to screen lock")
                 }
             }
             
@@ -101,7 +101,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
             currentApp = null
         }
         
-        android.util.Log.d("Regain", "Current Foreground App (final): $currentApp")
+        android.util.Log.d("UnScroll", "Current Foreground App (final): $currentApp")
         
         // Handle app switching (save previous session if needed)
         updatePreviousSession(context, currentApp, repository)
@@ -128,7 +128,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
             // CRITICAL FIX: If app is BLOCKED, show dialog but don't process further
             // This prevents infinite loop of showing dialog every 2 seconds
             if (app.sessionState == AppEntity.STATE_BLOCKED) {
-                android.util.Log.d("Regain", "$packageName is BLOCKED. Showing block dialog only.")
+                android.util.Log.d("UnScroll", "$packageName is BLOCKED. Showing block dialog only.")
                 handleLimitedApp(context, app, repository)
                 return@let
             }
@@ -148,7 +148,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
         } ?: run {
             // No current app (e.g. home screen) -> Cancel timer and reset notification
             UsageMonitorService.cancelNotificationTimer()
-            UsageMonitorService.updateNotification("", "Regain Active", "Monitoring usage...", 0, 0)
+            UsageMonitorService.updateNotification("", "UnScroll Active", "Monitoring usage...", 0, 0)
         }
     }
 
@@ -184,7 +184,7 @@ class UsageCheckReceiver : BroadcastReceiver() {
                 val title = "${app.appName} - Used $totalFormatted today"
                 val text = "Session time left: $remainingFormatted"
                 
-                android.util.Log.d("Regain", "Notification update: $title | $text")
+                android.util.Log.d("UnScroll", "Notification update: $title | $text")
                 
                 UsageMonitorService.updateNotification(
                     app.packageName,
@@ -271,18 +271,18 @@ class UsageCheckReceiver : BroadcastReceiver() {
             val prevAppEntity = repository.getApp(previousApp)
             if (prevAppEntity != null && prevAppEntity.sessionState == AppEntity.STATE_ACTIVE) {
                 repository.updateSessionTime(previousApp)
-                android.util.Log.d("Regain", "Final time update for $previousApp before pausing")
+                android.util.Log.d("UnScroll", "Final time update for $previousApp before pausing")
             }
             
             // If previous app was BLOCKED, reset to IDLE for next launch
             if (prevAppEntity != null && prevAppEntity.sessionState == AppEntity.STATE_BLOCKED) {
-                // EXCEPTION: If we are switching to Regain (e.g. Blocking Overlay), keep it BLOCKED
+                // EXCEPTION: If we are switching to UnScroll (e.g. Blocking Overlay), keep it BLOCKED
                 // This allows 'grantExtension' to see the BLOCKED state and calculate time correctly
                 if (currentPkg != context.packageName) {
                     repository.updateSessionState(previousApp, AppEntity.STATE_IDLE)
-                    android.util.Log.d("Regain", "Reset $previousApp from BLOCKED to IDLE")
+                    android.util.Log.d("UnScroll", "Reset $previousApp from BLOCKED to IDLE")
                 } else {
-                    android.util.Log.d("Regain", "Kept $previousApp BLOCKED because overlay is active")
+                    android.util.Log.d("UnScroll", "Kept $previousApp BLOCKED because overlay is active")
                 }
             } else if (prevAppEntity != null) {
                  // Pause session for any other state (ACTIVE, etc)

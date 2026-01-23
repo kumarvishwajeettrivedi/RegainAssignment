@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.regainassignment.data.local.AppDao
 import com.example.regainassignment.data.local.AppDatabase
+import com.example.regainassignment.data.local.TodoDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,12 +24,17 @@ object DatabaseModule {
             AppDatabase::class.java,
             "regain_app_database"
         )
-        .addMigrations(AppDatabase.MIGRATION_1_2)
+        .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
         .build()
     }
 
     @Provides
     fun provideAppDao(database: AppDatabase): AppDao {
         return database.appDao()
+    }
+    
+    @Provides
+    fun provideTodoDao(database: AppDatabase): TodoDao {
+        return database.todoDao()
     }
 }

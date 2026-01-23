@@ -80,7 +80,7 @@
 ## Required Permissions
 
 | Permission | Purpose |
-|------------|---------|
+|------------|---------| 
 | `PACKAGE_USAGE_STATS` | Query app usage statistics |
 | `SYSTEM_ALERT_WINDOW` | Display overlay on top of apps |
 | `FOREGROUND_SERVICE` | Keep tracking service alive |

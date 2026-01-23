@@ -160,7 +160,7 @@ class UsageRepositoryImpl @Inject constructor(
         )
         activeSessions[packageName] = newSession
         
-        android.util.Log.d("Regain", "Started session for $packageName: duration=${duration}ms, remaining=${duration}ms, state=ACTIVE")
+        android.util.Log.d("UnScroll", "Started session for $packageName: duration=${duration}ms, remaining=${duration}ms, state=ACTIVE")
     }
     
     override suspend fun updateRemainingTime(packageName: String, remainingTime: Long) {
@@ -351,7 +351,7 @@ class UsageRepositoryImpl @Inject constructor(
         appDao.updateRemainingTime(packageName, remainingTime)
         appDao.updateSessionState(packageName, AppEntity.STATE_ACTIVE)
         
-        android.util.Log.d("Regain", "Granted ${minutes}m extension for $packageName. New Remaining: ${remainingTime/1000}s")
+        android.util.Log.d("UnScroll", "Granted ${minutes}m extension for $packageName. New Remaining: ${remainingTime/1000}s")
     }
 
     override suspend fun endSession(packageName: String) {
@@ -365,7 +365,7 @@ class UsageRepositoryImpl @Inject constructor(
             pausedTime = System.currentTimeMillis()
         )
         
-        android.util.Log.d("Regain", "Ended session for $packageName (remainingTime set to 0, state -> BLOCKED)")
+        android.util.Log.d("UnScroll", "Ended session for $packageName (remainingTime set to 0, state -> BLOCKED)")
     }
 
     override suspend fun updateSessionState(packageName: String, state: Int) {
@@ -374,7 +374,7 @@ class UsageRepositoryImpl @Inject constructor(
         // Only clear session on explicit BLOCK or expiration
         if (state == AppEntity.STATE_BLOCKED) {
             activeSessions.remove(packageName)
-            android.util.Log.d("Regain", "Cleared session cache for $packageName (state -> BLOCKED)")
+            android.util.Log.d("UnScroll", "Cleared session cache for $packageName (state -> BLOCKED)")
         }
     }
 
@@ -410,7 +410,7 @@ class UsageRepositoryImpl @Inject constructor(
         // CRITICAL FIX: Remove from activeSessions to prevent accidental updates by Receiver race conditions
         activeSessions.remove(packageName)
         
-        android.util.Log.d("Regain", "Paused session for $packageName: ${remainingTime}ms remaining. Removed from memory.")
+        android.util.Log.d("UnScroll", "Paused session for $packageName: ${remainingTime}ms remaining. Removed from memory.")
     }
 
     override suspend fun resumeSession(packageName: String) {
@@ -418,13 +418,13 @@ class UsageRepositoryImpl @Inject constructor(
         
         // BLOCKED means permanently blocked, don't resume
         if (app.sessionState == AppEntity.STATE_BLOCKED) {
-            android.util.Log.d("Regain", "Resume blocked: $packageName is BLOCKED")
+            android.util.Log.d("UnScroll", "Resume blocked: $packageName is BLOCKED")
             return
         }
         
         // IDLE means no session started yet - this is fine, receiver will handle it
         if (app.sessionState == AppEntity.STATE_IDLE) {
-            android.util.Log.d("Regain", "Resume skipped: $packageName is IDLE (session not started)")
+            android.util.Log.d("UnScroll", "Resume skipped: $packageName is IDLE (session not started)")
             return
         }
         
@@ -434,7 +434,7 @@ class UsageRepositoryImpl @Inject constructor(
             
             // Sanity check
             if (totalUsed > app.selectedSessionDuration) {
-                android.util.Log.e("Regain", "Data corruption: totalUsed ($totalUsed) > duration (${app.selectedSessionDuration})")
+                android.util.Log.e("UnScroll", "Data corruption: totalUsed ($totalUsed) > duration (${app.selectedSessionDuration})")
                 // Reset to prevent infinite loop
                 appDao.updateSessionState(packageName, AppEntity.STATE_IDLE)
                 return
@@ -458,9 +458,9 @@ class UsageRepositoryImpl @Inject constructor(
                 pausedTime = 0L
             )
             
-            android.util.Log.d("Regain", "Resumed session for $packageName: used=${totalUsed}ms, remaining=${app.remainingSessionTime}ms")
+            android.util.Log.d("UnScroll", "Resumed session for $packageName: used=${totalUsed}ms, remaining=${app.remainingSessionTime}ms")
         } else {
-            android.util.Log.d("Regain", "Cannot resume $packageName: remainingTime=${app.remainingSessionTime}, duration=${app.selectedSessionDuration}")
+            android.util.Log.d("UnScroll", "Cannot resume $packageName: remainingTime=${app.remainingSessionTime}, duration=${app.selectedSessionDuration}")
         }
     }
     

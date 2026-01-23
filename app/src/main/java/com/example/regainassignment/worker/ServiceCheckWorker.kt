@@ -19,10 +19,10 @@ class ServiceCheckWorker @AssistedInject constructor(
         val context = applicationContext
         
         if (!isServiceRunning(context, com.example.regainassignment.service.UsageMonitorService::class.java)) {
-            android.util.Log.w("Regain", "Watchdog: Service is dead. Restarting...")
+            android.util.Log.w("UnScroll", "Watchdog: Service is dead. Restarting...")
             startMonitoringService(context)
         } else {
-            android.util.Log.d("Regain", "Watchdog: Service is alive.")
+            android.util.Log.d("UnScroll", "Watchdog: Service is alive.")
         }
         
         return Result.success()

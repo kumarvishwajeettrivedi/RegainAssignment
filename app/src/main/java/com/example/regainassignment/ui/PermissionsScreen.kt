@@ -6,32 +6,45 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import com.example.regainassignment.R
 import com.example.regainassignment.service.UsageMonitorService
 import com.example.regainassignment.util.PermissionUtils
+import com.example.regainassignment.util.OnboardingPreferences
+import com.example.regainassignment.ui.onboarding.CHARACTERS
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PermissionsScreen(navController: NavController) {
+fun PermissionsScreen(
+    navController: NavController,
+    onboardingPrefs: OnboardingPreferences
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -58,7 +71,7 @@ fun PermissionsScreen(navController: NavController) {
         onResult = { isGranted -> hasNotification = isGranted }
     )
 
-    // Critical: Update state when user returns to app
+    // Update state when user returns to app
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -77,57 +90,94 @@ fun PermissionsScreen(navController: NavController) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Setup Regain", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
-    ) { padding ->
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Nature Background
+        Image(
+            painter = painterResource(id = R.drawable.nature_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // Overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            // Character emoji
+            val characterId = onboardingPrefs.getCharacter()
+            val character = CHARACTERS.find { it.id == characterId } ?: CHARACTERS.first()
+            
             Text(
-                "To help you reduce screen time, Regain needs a few permissions to function.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                text = character.emoji,
+                fontSize = 120.sp
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Title
+            Text(
+                text = "Let's Set Things Up!",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = Color.White // White
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Subtitle
+            Text(
+                text = "I need a few permissions to help you stay focused and productive",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f), // White with alpha
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Permission Cards
-            PermissionItemCard(
-                title = "1. Usage Access",
-                description = "Required to track how much time you spend on apps like Instagram.",
+            PermissionCard(
+                icon = Icons.Default.Settings,
+                title = "Track Usage",
+                description = "Let me help you track your app time",
                 isGranted = hasUsageStats,
                 onClick = {
                     context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                 }
             )
+            
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                PermissionItemCard(
-                    title = "2. Notifications",
-                    description = "Required to show the timer and daily usage in status bar.",
+                PermissionCard(
+                    icon = Icons.Default.Notifications,
+                    title = "Notifications",
+                    description = "I'll send you helpful reminders",
                     isGranted = hasNotification,
                     onClick = {
                         launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                     }
                 )
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            PermissionItemCard(
-                title = "3. Display Over Apps",
-                description = "Required to show the 'Time's Up' blocking screen.",
+            PermissionCard(
+                icon = Icons.Default.Phone,
+                title = "Display Overlay",
+                description = "I'll gently remind you to stay focused",
                 isGranted = hasOverlay,
                 onClick = {
                     val intent = Intent(
@@ -137,26 +187,40 @@ fun PermissionsScreen(navController: NavController) {
                     context.startActivity(intent)
                 }
             )
+            
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // 4. Background Settings (Generic for Xiaomi/OnePlus/etc)
-            // This is manual because we can't easily check it
-            PermissionItemCard(
-                title = "4. Background Settings",
-                description = "Enable 'Background Pop-ups', 'Open new windows while running in background', or 'Allow Background Activity' to ensure the timer works.",
-                isGranted = false, // Always show "Open" or handle logic. 
-                // Better UI: Use a different button style or just "Open Settings"
-                // For consistnecy, we keep isGranted=false but change button text implicitly via Logic?
-                // No, standard card expects isGranted.
-                // Let's modify the card or just accept it shows "Grant" (we can interpret as "Open")
+            // Battery Optimization
+            var hasBatteryUsage by remember { mutableStateOf(PermissionUtils.isIgnoringBatteryOptimizations(context)) }
+            
+            // Check battery optimization on resume
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                         hasBatteryUsage = PermissionUtils.isIgnoringBatteryOptimizations(context)
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+
+            PermissionCard(
+                icon = Icons.Default.Info,
+                title = "Ignore Battery Opt",
+                description = "Allow me to work in background",
+                isGranted = hasBatteryUsage,
                 onClick = {
-                    openBackgroundSettings(context)
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                    }
+                    context.startActivity(intent)
                 }
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             // Continue Button
-            val allGranted = hasUsageStats && hasNotification && hasOverlay
+            val allGranted = hasUsageStats && hasNotification && hasOverlay && hasBatteryUsage
             Button(
                 onClick = {
                     if (allGranted) {
@@ -166,8 +230,16 @@ fun PermissionsScreen(navController: NavController) {
                         } else {
                             context.startService(intent)
                         }
-                        navController.navigate("app_list") {
-                            popUpTo("permissions") { inclusive = true }
+                        
+                        // Navigate to onboarding if not completed, otherwise to main
+                        if (!onboardingPrefs.isOnboardingCompleted()) {
+                            navController.navigate("onboarding_name") {
+                                popUpTo("permissions") { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate("main") {
+                                popUpTo("permissions") { inclusive = true }
+                            }
                         }
                     }
                 },
@@ -175,113 +247,115 @@ fun PermissionsScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFA726),
+                    contentColor = Color.Black,
+                    disabledContainerColor = Color.White.copy(alpha = 0.3f)
+                )
             ) {
                 Text(
-                    text = if (allGranted) "Get Started" else "Grant Permissions to Continue",
-                    style = MaterialTheme.typography.titleMedium
+                    text = if (allGranted) "Continue" else "Grant All Permissions",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    )
                 )
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
-
-// Helper to open manufacturer specific settings
-fun openBackgroundSettings(context: Context) {
-    try {
-        // 1. Try Xiaomi specific intent
-        val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
-        intent.putExtra("extra_pkgname", context.packageName)
-        
-        if (intent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(intent)
-            return
-        }
-        
-        // 2. Try generic Application Details (works for OnePlus, Pixel, etc)
-        val settingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        settingsIntent.data = Uri.parse("package:${context.packageName}")
-        context.startActivity(settingsIntent)
-        
-    } catch (e: Exception) {
-         // Fallback to generic settings if anything crashes
-        val settingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        settingsIntent.data = Uri.parse("package:${context.packageName}")
-        context.startActivity(settingsIntent)
-    }
-}
-
 
 @Composable
-fun PermissionItemCard(
+fun PermissionCard(
+    icon: ImageVector,
     title: String,
     description: String,
     isGranted: Boolean,
     onClick: () -> Unit
 ) {
-    // Special handling for the manual "Background Settings" card 
-    // We want it to look "Actionable" but not strictly "Red" if ignored, 
-    // but the user logic implies it's "Extra". 
-    // However, to keep it simple, we reuse the component.
-    
-    // If it's the "Background Settings" title, we always show "Open Settings" instead of "Grant"
-    val isBackgroundCard = title.contains("Background Settings")
-    
-    // For Background Card, we might visually show it as "Info" or "Warning" style if we wanted,
-    // but standard gray/red is fine logic.
-    // If we want it to NOT block progress, we treat it as isGranted = false visually but Button = "Open".
-    
     Card(
-        onClick = { if (!isGranted || isBackgroundCard) onClick() },
+        onClick = { if (!isGranted) onClick() },
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isGranted) 
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                Color(0xFF4CAF50).copy(alpha = 0.2f) // Light Green for granted
             else 
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                Color.White // White for pending
         ),
-        enabled = (!isGranted || isBackgroundCard)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        ),
+        enabled = !isGranted
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            // Icon
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        if (isGranted) 
+                            Color(0xFF4CAF50).copy(alpha = 0.2f)
+                        else 
+                            Color.Gray.copy(alpha = 0.1f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isGranted) 
+                        Color(0xFF2E7D32) // Dark Green
+                    else 
+                        Color.Black,
+                    modifier = Modifier.size(24.dp)
                 )
             }
             
             Spacer(modifier = Modifier.width(16.dp))
+            
+            // Text
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Black.copy(alpha=0.6f)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
 
-            if (isGranted && !isBackgroundCard) {
+            // Status
+            if (isGranted) {
                 Icon(
-                    imageVector = Icons.Default.Check,
+                    imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Granted",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape)
-                        .padding(4.dp)
+                    tint = Color(0xFF4CAF50), // Green check
+                    modifier = Modifier.size(28.dp)
                 )
             } else {
-                Button(
-                    onClick = onClick,
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    modifier = Modifier.height(36.dp)
-                ) {
-                    Text(if (isBackgroundCard) "Open" else "Grant")
-                }
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Grant",
+                    tint = Color.Black.copy(alpha=0.4f),
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }

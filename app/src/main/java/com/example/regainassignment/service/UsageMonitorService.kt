@@ -100,7 +100,7 @@ class UsageMonitorService : Service() {
             while (isActive && currentSec < maxSec) {
                
                 if (!powerManager.isInteractive) {
-                    android.util.Log.d("Regain", "Screen locked, pausing visual timer")
+                    android.util.Log.d("UnScroll", "Screen locked, pausing visual timer")
                     resetToDefaultNotification()
                     break
                 }
@@ -109,14 +109,14 @@ class UsageMonitorService : Service() {
                 
                 if (currentPkg != null) {
                     if (currentPkg.contains("launcher") || currentPkg.contains("nexuslauncher")) {
-                         android.util.Log.d("Regain", "User on Home Screen, pausing timer visual")
+                         android.util.Log.d("UnScroll", "User on Home Screen, pausing timer visual")
                          resetToDefaultNotification()
                          break
                     }
                     
                     // Check for App Switch
                     if (currentPkg != packageName) {
-                        android.util.Log.d("Regain", "App switched from $packageName to $currentPkg. Stopping timer.")
+                        android.util.Log.d("UnScroll", "App switched from $packageName to $currentPkg. Stopping timer.")
                         resetToDefaultNotification()
                         
 
@@ -130,14 +130,14 @@ class UsageMonitorService : Service() {
                 
                 val newTitle = "$appName: $formattedTime left"
                 
-                android.util.Log.d("Regain", "Timer Update: $packageName - $formattedTime left")
+                android.util.Log.d("UnScroll", "Timer Update: $packageName - $formattedTime left")
                 updateNotificationUI(newTitle, text, maxSec, currentSec)
                 
                 delay(1000)
                 currentSec++
             }
             if (currentSec >= maxSec) {
-                android.util.Log.d("Regain", "Timer Finished locally for $packageName")
+                android.util.Log.d("UnScroll", "Timer Finished locally for $packageName")
                 // Let the Receiver handle the actual blocking logic
             }
         }
@@ -185,7 +185,7 @@ class UsageMonitorService : Service() {
 
     private fun resetToDefaultNotification() {
         currentTimerPackage = null
-        updateNotificationUI("Regain is active", "Monitoring usage...", 0, 0)
+        updateNotificationUI("UnScroll Active", "Monitoring usage...", 0, 0)
     }
 
     private fun createNotification(): Notification {
@@ -203,7 +203,7 @@ class UsageMonitorService : Service() {
         }
         
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Regain is active")
+            .setContentTitle("UnScroll Active")
             .setContentText("Monitoring your app usage")
             .setSmallIcon(android.R.drawable.ic_dialog_info) 
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -217,7 +217,7 @@ class UsageMonitorService : Service() {
         monitorJob?.cancel()
         
         monitorJob = scope.launch {
-            android.util.Log.d("Regain", "Starting reliable monitoring loop (Interval: ${CHECK_INTERVAL_MS}ms)")
+            android.util.Log.d("UnScroll", "Starting reliable monitoring loop (Interval: ${CHECK_INTERVAL_MS}ms)")
             
             while (isActive) {
                 try {
@@ -228,7 +228,7 @@ class UsageMonitorService : Service() {
                     // Wait for the next interval
                     delay(CHECK_INTERVAL_MS)
                 } catch (e: Exception) {
-                    android.util.Log.e("Regain", "Error in monitoring loop", e)
+                    android.util.Log.e("UnScroll", "Error in monitoring loop", e)
                     // Wait a bit before retrying to avoid crash loops
                     delay(5000)
                 }
@@ -255,7 +255,7 @@ class UsageMonitorService : Service() {
         timerJob?.cancel()
         timerJob = null
         currentTimerPackage = null
-        android.util.Log.d("Regain", "Timer cancelled")
+        android.util.Log.d("UnScroll", "Timer cancelled")
         resetToDefaultNotification()
     }
 
