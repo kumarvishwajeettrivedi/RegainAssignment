@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.regainassignment.R
 import com.example.regainassignment.data.local.TodoEntity
 import com.example.regainassignment.ui.TodoViewModel
+import com.example.regainassignment.ui.components.UnscrollFooter
 import com.example.regainassignment.util.OnboardingPreferences
 import java.text.SimpleDateFormat
 import java.util.*
@@ -90,7 +91,7 @@ fun PlanningScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFFFF9F0)), // Creamy background like ref
-            contentPadding = PaddingValues(bottom = 100.dp)
+            contentPadding = PaddingValues(bottom = 120.dp)
         ) {
             // Header
             item {
@@ -163,6 +164,13 @@ fun PlanningScreen(
                         )
                     }
                 }
+            }
+
+            item {
+                // Absolute bottom footer - more space for planner air
+                Spacer(modifier = Modifier.height(60.dp))
+                UnscrollFooter()
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
@@ -476,12 +484,13 @@ fun TodoTimelineItem(
                          // Delete button
                         IconButton(
                             onClick = onDelete,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                            Icon(
                                imageVector = Icons.Outlined.Delete,
                                contentDescription = "Delete Task",
-                               tint = Color.White.copy(alpha = 0.8f)
+                               tint = Color.White.copy(alpha = 0.8f),
+                               modifier = Modifier.size(20.dp)
                            )
                         }
                         
@@ -490,7 +499,7 @@ fun TodoTimelineItem(
                         // Done Circle Button (Same size as delete - 24dp)
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(32.dp)
                                 .background(
                                     if (todo.isCompleted) Color.White else Color.Transparent,
                                     CircleShape
@@ -508,7 +517,7 @@ fun TodoTimelineItem(
                                     Icons.Default.Check,
                                     contentDescription = null,
                                     tint = cardColor, // Use card color for contrast
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }

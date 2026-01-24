@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Lock
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.regainassignment.R
 import com.example.regainassignment.util.OnboardingPreferences
+import androidx.compose.ui.graphics.StrokeJoin
+import com.example.regainassignment.ui.components.UnscrollFooter
 
 // Colors from spec
 private val DarkTeal = Color(0xFF1B4D3E)
@@ -42,15 +44,25 @@ private val LightPurple = Color(0xFFD4BBFF)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProgressScreen(
-    onboardingPrefs: OnboardingPreferences
+    onboardingPrefs: OnboardingPreferences,
+    viewModel: ProgressViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Daily", "Weekly", "Monthly")
     
+    val streakInfo by viewModel.streakInfo.collectAsState()
+    val usageData by viewModel.usageData.collectAsState()
+    
+    // Initial Load
+    LaunchedEffect(Unit) {
+        viewModel.loadUsageData(0)
+    }
+    
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .background(Color(0xFFF5F5F5)),
+        contentPadding = PaddingValues(bottom = 120.dp)
     ) {
         item {
             // Header with character
@@ -58,36 +70,27 @@ fun ProgressScreen(
         }
         
         item {
-            // User name & level card
-            UserLevelCard()
-        }
-        
-        item {
-            // Milestone progress
-            MilestoneProgress()
-        }
-        
-        item {
             // Time period tabs
             TimePeriodTabs(
                 selectedTab = selectedTab,
                 tabs = tabs,
-                onTabSelected = { selectedTab = it }
+                usageData = usageData,
+                onTabSelected = { 
+                    selectedTab = it 
+                    viewModel.loadUsageData(it)
+                }
             )
         }
         
         item {
             // Streak calendar
-            StreakCalendar()
+            StreakCalendar(streakInfo = streakInfo)
         }
         
         item {
-            // Coupons section
-            CouponsSection()
-        }
-        
-        item {
-            Spacer(modifier = Modifier.height(100.dp))
+             // Absolute bottom footer
+             UnscrollFooter()
+             Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -97,264 +100,102 @@ fun ProgressHeader(onboardingPrefs: OnboardingPreferences) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(280.dp) // Match Planner Height
     ) {
-        // Background with decorative elements
+        // Curve Background (Planner Style)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    Brush.verticalGradient(
-                        colors = listOf(DarkTeal, Color(0xFF2D6A57))
-                    )
+                    DarkTeal, // Solid color to match Planner
+                    shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
                 )
         )
         
-        // Purple triangle (left side)
+        // Decorative Circles (Planner Style - Top Left & Bottom Left)
         Box(
             modifier = Modifier
-                .offset(x = (-70).dp, y = 20.dp)
-                .size(120.dp, 160.dp)
-                .background(Purple.copy(alpha = 0.6f))
+                .offset(x = (-30).dp, y = (-20).dp)
+                .offset(x = (-30).dp, y = (-20).dp)
+                .size(120.dp)
+                .background(Purple, CircleShape) 
         )
         
-        // Purple circles (right side)
+        // Top Right Circles
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 30.dp, y = 20.dp)
-                .size(60.dp)
-                .background(PurpleLight.copy(alpha = 0.4f), CircleShape)
+                .offset(x = 20.dp, y = 40.dp)
+                .offset(x = 20.dp, y = 40.dp)
+                .size(80.dp)
+                .background(Purple, CircleShape)
+                .size(80.dp)
+                .background(Purple, CircleShape)
         )
+        // Bottom Left Circle
         Box(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = 100.dp)
-                .size(90.dp)
-                .background(PurpleLight.copy(alpha = 0.4f), CircleShape)
+                .align(Alignment.BottomStart)
+                .offset(x = 20.dp, y = (-30).dp)
+                .size(60.dp)
+                .background(Purple, CircleShape)
         )
         
         // Content
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { /* Back */ }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
-                }
-                
-                Text(
-                    text = "Progress",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                
-                // Placeholder for balance
-                Box(modifier = Modifier.size(40.dp))
-            }
-            
-            Spacer(modifier = Modifier.height(10.dp))
-            
-            // Character holding chart
-            Text(
-                text = "🦝",
-                fontSize = 80.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun UserLevelCard() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .offset(y = (-40).dp)
-            .shadow(6.dp, RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(Color.White)
-    ) {
-        Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(20.dp)
         ) {
-            // Name and level
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            // Header: Title Top-Left
+            Text(
+                text = "Progress",
+                fontSize = 34.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Character Image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Togo",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkTeal
-                )
-                Text(
-                    text = " · ",
-                    fontSize = 20.sp,
-                    color = Color.Gray
-                )
-                Text(
-                    text = "100 XP",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Gray
+                Image(
+                    painter = painterResource(id = R.drawable.character_celebration),
+                    contentDescription = "Character",
+                    modifier = Modifier.size(160.dp)
                 )
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Divider
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(LightPurple)
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Status message
+            // Subtitle / Tagline (Planner Style)
             Text(
-                text = "Complete your daily task by night to get max XP",
-                fontSize = 14.sp,
-                color = Color.DarkGray,
-                lineHeight = 20.sp
+                text = "You are doing well, see report",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.95f),
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp, bottom = 4.dp)
             )
+            
+            // Extra spacing at bottom due to curve
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
-@Composable
-fun MilestoneProgress() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(top = 16.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(Color.White)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            // Milestone dots and line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-            ) {
-                // Progress line
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.5f)
-                        .height(6.dp)
-                        .align(Alignment.CenterStart)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(Purple, Color(0xFF9B8EFF))
-                            ),
-                            RoundedCornerShape(3.dp)
-                        )
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.5f)
-                        .height(6.dp)
-                        .align(Alignment.CenterEnd)
-                        .background(Color(0xFFE0E0E0), RoundedCornerShape(3.dp))
-                )
-                
-                // Milestone dots
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Center),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    MilestoneDot(completed = true, label = "0 XP")
-                    MilestoneDot(completed = true, label = "50 XP")
-                    MilestoneDot(completed = false, current = true, label = "100 XP")
-                    MilestoneDot(completed = false, label = "150 XP")
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "Complete your daily task by night to get max progress",
-                fontSize = 13.sp,
-                color = Color.Gray,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                lineHeight = 18.sp
-            )
-        }
-    }
-}
 
-@Composable
-fun MilestoneDot(
-    completed: Boolean = false,
-    current: Boolean = false,
-    label: String
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(if (current) 28.dp else 20.dp)
-                .background(
-                    if (completed || current) Purple else Color.White,
-                    CircleShape
-                )
-                .border(
-                    width = if (current) 4.dp else 3.dp,
-                    color = if (completed || current) Color.White else Color(0xFFBDBDBD),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            if (completed) {
-                Text(
-                    text = "✓",
-                    color = Color.White,
-                    fontSize = 12.sp
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (completed || current) Purple else Color.Gray
-        )
-    }
-}
+
+
+
+
 
 @Composable
 fun TimePeriodTabs(
     selectedTab: Int,
     tabs: List<String>,
+    usageData: List<Float>,
     onTabSelected: (Int) -> Unit
 ) {
     Column {
@@ -386,12 +227,12 @@ fun TimePeriodTabs(
         }
         
         // Performance Graph
-        PerformanceGraph(selectedTab = selectedTab)
+        PerformanceGraph(selectedTab = selectedTab, dataPoints = usageData)
     }
 }
 
 @Composable
-fun PerformanceGraph(selectedTab: Int) {
+fun PerformanceGraph(selectedTab: Int, dataPoints: List<Float>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -411,27 +252,11 @@ fun PerformanceGraph(selectedTab: Int) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "App Usage Control",
+                    text = "App Usage",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.DarkGray
                 )
-                
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(Color(0xFF4CAF50), CircleShape)
-                    )
-                    Text(
-                        text = "Under Limit",
-                        fontSize = 11.sp,
-                        color = Color.Gray
-                    )
-                }
             }
             
             Spacer(modifier = Modifier.height(20.dp))
@@ -444,8 +269,8 @@ fun PerformanceGraph(selectedTab: Int) {
                     .background(Color(0xFFF8F8F8), RoundedCornerShape(12.dp))
                     .padding(16.dp)
             ) {
-                // Mock graph visualization
-                GraphVisualization(selectedTab = selectedTab)
+                // Real graph visualization
+                GraphVisualization(selectedTab = selectedTab, dataPoints = dataPoints)
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -475,16 +300,12 @@ fun PerformanceGraph(selectedTab: Int) {
 }
 
 @Composable
-fun GraphVisualization(selectedTab: Int) {
-    // Mock data points - in real app, this would come from ViewModel
-    val dataPoints = remember(selectedTab) {
-        when (selectedTab) {
-            0 -> listOf(2.5f, 2.8f, 2.2f, 3.1f, 2.6f, 2.9f, 2.4f) // Daily (hours)
-            1 -> listOf(18f, 20f, 17f, 22f) // Weekly (hours)
-            else -> listOf(85f, 92f, 78f, 88f, 95f, 87f) // Monthly (hours)
-        }
-    }
-    val maxValue = 4f // Daily limit in hours
+fun GraphVisualization(selectedTab: Int, dataPoints: List<Float>) {
+    // Dynamic max value based on data
+    val maxValue = (dataPoints.maxOrNull() ?: 1f) * 1.2f
+    
+    // If empty, show placeholder or just empty
+    if (dataPoints.isEmpty()) return
     
     Canvas(modifier = Modifier.fillMaxSize()) {
         val width = size.width
@@ -545,7 +366,7 @@ fun GraphVisualization(selectedTab: Int) {
 }
 
 @Composable
-fun StreakCalendar() {
+fun StreakCalendar(streakInfo: StreakInfo) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -586,7 +407,7 @@ fun StreakCalendar() {
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Longest: 12 days",
+                            text = "Based on Todo completion",
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.7f)
                         )
@@ -597,7 +418,7 @@ fun StreakCalendar() {
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "5",
+                            text = streakInfo.currentStreak.toString(),
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -637,37 +458,18 @@ fun StreakCalendar() {
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // Streak day cells (4 weeks)
+                // Days of week (Current Week)
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Week 1 - showing pattern: completed, completed, completed, completed, completed, current, future
+                    // Only show current week for simplicity or map logic for multiple rows
+                    // The ViewModel returns 7 days for the current week.
                     StreakWeekRow(
-                        days = listOf(
-                            DayState.Completed, DayState.Completed, DayState.Completed,
-                            DayState.Completed, DayState.Completed, DayState.Current, DayState.Future
-                        )
-                    )
-                    // Week 2 - past week with one missed day
-                    StreakWeekRow(
-                        days = listOf(
-                            DayState.Completed, DayState.Completed, DayState.Missed,
-                            DayState.Completed, DayState.Completed, DayState.Completed, DayState.Completed
-                        )
-                    )
-                    // Week 3 - older week
-                    StreakWeekRow(
-                        days = listOf(
-                            DayState.Completed, DayState.Completed, DayState.Completed,
-                            DayState.Completed, DayState.Missed, DayState.Completed, DayState.Completed
-                        )
-                    )
-                    // Week 4 - oldest visible week
-                    StreakWeekRow(
-                        days = listOf(
-                            DayState.Completed, DayState.Missed, DayState.Completed,
-                            DayState.Completed, DayState.Completed, DayState.Completed, DayState.Completed
-                        )
+                        days = streakInfo.weekDays.takeIf { it.isNotEmpty() } ?: listOf(
+                             DayState.Future, DayState.Future, DayState.Future,
+                             DayState.Future, DayState.Future, DayState.Future, DayState.Future
+                        ),
+                        isTodayCompleted = streakInfo.isTodayCompleted
                     )
                 }
             }
@@ -680,7 +482,7 @@ enum class DayState {
 }
 
 @Composable
-fun StreakWeekRow(days: List<DayState>) {
+fun StreakWeekRow(days: List<DayState>, isTodayCompleted: Boolean = false) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -725,14 +527,18 @@ fun StreakWeekRow(days: List<DayState>) {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .border(3.dp, Color.White, CircleShape)
-                                .background(Color.White, CircleShape),
+                                .background(
+                                    if (isTodayCompleted) Color.White else Color.Transparent, 
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
-                            // Can show star if completed today
-                            Text(
-                                text = "⭐",
-                                fontSize = 16.sp
-                            )
+                            if (isTodayCompleted) {
+                                Text(
+                                    text = "⭐",
+                                    fontSize = 16.sp
+                                )
+                            }
                         }
                     }
                     DayState.Future -> {
@@ -753,106 +559,4 @@ fun StreakWeekRow(days: List<DayState>) {
     }
 }
 
-@Composable
-fun CouponsSection() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Coupons",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.DarkGray
-            )
-            
-            // Character illustration
-            Text(
-                text = "🦝",
-                fontSize = 40.sp
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(end = 16.dp)
-        ) {
-            items(2) { index ->
-                CouponCard()
-            }
-        }
-    }
-}
 
-@Composable
-fun CouponCard() {
-    Card(
-        modifier = Modifier
-            .width(160.dp)
-            .height(120.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(Color(0xFF2C2C2C))
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "🎫 GET IT",
-                        fontSize = 11.sp,
-                        color = Color.White
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-                
-                Text(
-                    text ="Get Flat 55% OFF*",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                
-                Text(
-                    text = "on Cookies Fee",
-                    fontSize = 10.sp,
-                    color = Color.Gray
-                )
-                
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(24.dp)
-                        .background(Color(0xFF4CAF50), RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Unlock with 50 XP 🔒",
-                        fontSize = 10.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
-    }
-}

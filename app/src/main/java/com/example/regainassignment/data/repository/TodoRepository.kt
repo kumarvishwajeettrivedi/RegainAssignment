@@ -33,4 +33,6 @@ class TodoRepository @Inject constructor(
     }
     
     suspend fun deleteCompletedTodos() = todoDao.deleteCompletedTodos()
+    
+    suspend fun deleteOldCompletedTodos(threshold: Long) = todoDao.deleteOldCompletedTodos(threshold)
 }

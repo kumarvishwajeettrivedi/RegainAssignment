@@ -47,4 +47,7 @@ interface UsageRepository {
     suspend fun pauseSession(packageName: String)
     suspend fun resumeSession(packageName: String)
     fun isSessionInMemory(packageName: String): Boolean
+
+    // New: Historical Usage
+    suspend fun getHistoricalUsage(context: android.content.Context, interval: Int): Map<String, List<Float>>
 }

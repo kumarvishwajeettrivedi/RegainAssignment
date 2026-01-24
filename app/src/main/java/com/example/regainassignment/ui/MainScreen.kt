@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Star
 // Let's use 'Home' or 'Info' temporarily if Eye fails, but let's try 'Eye' or 'Face'.
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,7 +64,9 @@ fun MainScreen(
         NavHost(
             navController = navController,
             startDestination = startDest,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            enterTransition = { fadeIn(animationSpec = tween(200)) },
+            exitTransition = { fadeOut(animationSpec = tween(200)) }
         ) {
             composable(BottomNavItem.FocusMode.route) {
                 AppListScreen(

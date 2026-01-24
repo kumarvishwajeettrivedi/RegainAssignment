@@ -124,16 +124,30 @@ class UsageRepositoryImpl @Inject constructor(
             val systemUsage = systemUsageMap[packageName] ?: 0L
             val existingApp = appDao.getApp(packageName)
             
+            // NEW: Detect games to ensure they are available in distracting apps list
+            val isGame = try {
+                val appInfo = pm.getApplicationInfo(packageName, 0)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    appInfo.category == android.content.pm.ApplicationInfo.CATEGORY_GAME
+                } else {
+                    (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_IS_GAME) != 0
+                }
+            } catch (e: Exception) {
+                false
+            }
+            val likelyGame = isGame || packageName.contains("game", ignoreCase = true)
+            
             if (existingApp == null) {
+                if (likelyGame) android.util.Log.d("Regain", "Auto-discovered game app: $label ($packageName)")
+                
                 appDao.insertApp(
                     AppEntity(
                         packageName = packageName,
                         appName = label,
-                        totalUsageToday = systemUsage // Initialize with precise system usage
+                        totalUsageToday = systemUsage
                     )
                 )
             } else {
-                // CRITICAL FIX: Always overwrite with precise system usage
                 appDao.updateUsage(packageName, systemUsage, System.currentTimeMillis())
             }
         }
@@ -466,5 +480,50 @@ class UsageRepositoryImpl @Inject constructor(
     
     override fun isSessionInMemory(packageName: String): Boolean {
         return activeSessions.containsKey(packageName)
+    }
+
+    override suspend fun getHistoricalUsage(context: android.content.Context, interval: Int): Map<String, List<Float>> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val usageStatsManager = context.getSystemService(android.content.Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+        val calendar = java.util.Calendar.getInstance()
+        val endTime = calendar.timeInMillis
+        
+        // Interval 0: Daily (Last 7 days)
+        // Interval 1: Weekly (Last 4 weeks) 
+        // Interval 2: Monthly (Last 6 months)
+        val (startTime, bucketType) = when (interval) {
+            0 -> {
+                val c = java.util.Calendar.getInstance()
+                c.add(java.util.Calendar.DAY_OF_YEAR, -6)
+                c.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                c.set(java.util.Calendar.MINUTE, 0)
+                Pair(c.timeInMillis, android.app.usage.UsageStatsManager.INTERVAL_DAILY)
+            }
+            1 -> {
+                 val c = java.util.Calendar.getInstance()
+                 c.add(java.util.Calendar.WEEK_OF_YEAR, -3)
+                 Pair(c.timeInMillis, android.app.usage.UsageStatsManager.INTERVAL_WEEKLY)
+            }
+            else -> {
+                 val c = java.util.Calendar.getInstance()
+                 c.add(java.util.Calendar.MONTH, -5)
+                 Pair(c.timeInMillis, android.app.usage.UsageStatsManager.INTERVAL_MONTHLY)
+            }
+        }
+        
+        val stats = usageStatsManager.queryUsageStats(bucketType, startTime, endTime)
+        
+        // Group by time bucket to sum up usage of all apps per day/week/month
+        val grouped = stats.groupBy { it.firstTimeStamp }
+        
+        val sortedGroups = grouped.entries.sortedBy { it.key }
+        
+        val dataPoints = sortedGroups.map { (_, appStatsList) ->
+            // Sum total foreground time for all apps in this bucket
+            val totalMillis = appStatsList.sumOf { it.totalTimeInForeground }
+            totalMillis / (1000f * 3600f) // Hours
+        }
+        
+        // Ensure we handle empty data or fill gaps if necessary (simple version for now)
+        return@withContext mapOf("total" to dataPoints)
     }
 }

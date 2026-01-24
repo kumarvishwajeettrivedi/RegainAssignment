@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import com.example.regainassignment.data.local.AppEntity
 import com.example.regainassignment.ui.components.FocusScreenHeader
 import com.example.regainassignment.ui.components.AppIcon
+import com.example.regainassignment.ui.components.UnscrollFooter
 import com.example.regainassignment.util.OnboardingPreferences
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +50,7 @@ fun AppListScreen(
     // Hardcoded list of distraction keywords - UPDATED with Discord, YouTube, and Chrome
     val distractionKeywords = listOf(
         "instagram", "whatsapp", "snapchat", "twitter", "facebook", "tiktok",
-        "discord", "youtube", "chrome"  // Added chrome
+        "discord", "youtube", "chrome", "game", "freefire", "pubg", "callofduty", "tencent"
     )
     
     // Split apps into Distractions and Others
@@ -126,6 +127,10 @@ fun AppListScreen(
                     }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            item {
+                UnscrollFooter()
             }
         }
     }

@@ -34,4 +34,7 @@ interface TodoDao {
     
     @Query("DELETE FROM todos WHERE isCompleted = 1")
     suspend fun deleteCompletedTodos()
+
+    @Query("DELETE FROM todos WHERE isCompleted = 1 AND scheduledTime < :threshold")
+    suspend fun deleteOldCompletedTodos(threshold: Long)
 }
