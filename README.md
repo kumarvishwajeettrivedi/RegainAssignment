@@ -1,4 +1,4 @@
-# Regain - Real-Time App Usage Limiter
+# Unscroll - Real-Time App Usage Limiter
 
  It helps users manage their screen time by monitoring app usage in real-time and enforcing self-selected time limits through a blocking overlay system.
 
@@ -105,9 +105,9 @@
 ## Project Structure
 
 ```
-app/src/main/java/com/example/regainassignment/
+app/src/main/java/com/example/unscrollassignment/
 ├── MainActivity.kt                     # Entry point, navigation setup
-├── RegainApplication.kt                # Hilt setup, WorkManager scheduling
+├── unscrollApplication.kt                # Hilt setup, WorkManager scheduling
 ├── data/
 │   ├── local/
 │   │   ├── AppEntity.kt                # Room entity with session state
